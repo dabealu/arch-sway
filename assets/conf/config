@@ -1,0 +1,329 @@
+# Custom config for sway  ~/.config/sway/config.
+# Default config can be found in /etc/sway/config.
+# Read `man 5 sway` for a complete reference.
+
+### Appearance and fonts
+#set $font       "pango:Roboto"
+set $font       "pango:Noto Sans"
+set $font-size  12
+
+font $font $font-size
+
+# Set thin border for all windows
+default_border normal 1
+# gaps inner 1
+# gaps outer 1
+
+# Show window class in title
+for_window [class=".*"] title_format "<b>%class</b> : %title"
+
+# open pop-up windows in floating mode
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="task_dialog"] floating enable
+
+# Workspace aliases
+set $ws1 "1: 1 "
+set $ws2 "2: 2 "
+set $ws3 "3: 3 "
+set $ws4 "4: 4 "
+set $ws5 "5: 5 "
+set $ws6 "6: 6 "
+set $ws7 "7: 7 "
+set $ws8 "8: 8 "
+set $ws9 "9: 9 "
+set $ws0 "0: 0 "
+
+# Apps placement
+assign [class="Google-chrome"] $ws1
+assign [class="Slack"]         $ws2
+assign [class="Telegram"]      $ws2
+assign [class="code-oss"]      $ws3
+assign [class="Thunar"]        $ws4
+
+
+### Variables
+# Logo key. Use Mod1 for Alt.
+set $mod Mod4
+
+# Home row direction keys, like vim
+set $left  h
+set $down  j
+set $up    k
+set $right l
+
+# Terminal emulator
+set $term alacritty --config-file ~/.config/sway/alacritty.yml
+
+
+### Output configuration
+# Default wallpaper
+# output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
+output * bg  #000000 solid_color
+
+# Set resolution, run `swaymsg -t get_outputs` to list outputs
+# output HDMI-A-1 resolution 1920x1080 position 1920,0
+
+
+### Idle configuration
+# Lock your screen then turn it off.
+# It will also lock the screen before sleep.
+exec swayidle -w \
+    timeout 2400 'swaylock -f -c 000000' \
+    timeout 3600 'swaymsg "output * dpms off"' \
+    resume       'swaymsg "output * dpms on"' \
+    before-sleep 'swaylock -f -c 000000'
+
+
+### Input configuration
+# You can get the names of your inputs by running: swaymsg -t get_inputs
+# Read `man 5 sway-input` for more information about this section.
+input type:touchpad {
+    dwt              enabled
+    tap              enabled
+    natural_scroll   disabled
+    middle_emulation enabled
+    pointer_accel    0.2
+}
+
+input type:keyboard {
+    # Toggle keyboard layout
+    xkb_layout  us,ru
+    xkb_options grp:alt_shift_toggle
+}
+
+# Drag floating windows by holding down $mod and left mouse button.
+# Resize them with right mouse button + $mod.
+# Despite the name, also works for non-floating windows.
+# Change normal to inverse to use left mouse button for resizing and right
+# mouse button for dragging.
+floating_modifier $mod normal
+
+### Key bindings
+# use --to-code flag to make keybinds work with ru layout:
+# https://github.com/swaywm/sway/wiki#key-bindings-on-a-dual-usrussian-layout
+bindsym --to-code {
+    # Start a terminal
+    $mod+Return exec $term
+
+    # Kill focused window
+    $mod+q kill
+
+    # Reload the configuration file
+    $mod+Shift+c reload
+    $mod+Shift+r reload
+
+    # Exit sway (logs out of Wayland session)
+    $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -b 'Yes' 'swaymsg exit'
+
+    # Moving around:
+    $mod+Left   focus left
+    $mod+Down   focus down
+    $mod+Up     focus up
+    $mod+Right  focus right
+    # Cycle focus
+    $mod+tab    focus right
+
+    # Move the focused window with the same, but add Shift
+    $mod+Shift+Left   move left
+    $mod+Shift+Down   move down
+    $mod+Shift+Up     move up
+    $mod+Shift+Right  move right
+
+    # Workspaces:
+    # Switch to workspace
+    $mod+1 workspace $ws1
+    $mod+2 workspace $ws2
+    $mod+3 workspace $ws3
+    $mod+4 workspace $ws4
+    $mod+5 workspace $ws5
+    $mod+6 workspace $ws6
+    $mod+7 workspace $ws7
+    $mod+8 workspace $ws8
+    $mod+9 workspace $ws9
+    $mod+0 workspace $ws0
+    # Move focused container to workspace
+    $mod+Shift+1 move container to workspace $ws1
+    $mod+Shift+2 move container to workspace $ws2
+    $mod+Shift+3 move container to workspace $ws3
+    $mod+Shift+4 move container to workspace $ws4
+    $mod+Shift+5 move container to workspace $ws5
+    $mod+Shift+6 move container to workspace $ws6
+    $mod+Shift+7 move container to workspace $ws7
+    $mod+Shift+8 move container to workspace $ws8
+    $mod+Shift+9 move container to workspace $ws9
+    $mod+Shift+0 move container to workspace $ws0
+    # Note: workspaces can have any name you want, not just numbers.
+    # We just use 1-10 as the default.
+
+    # Layout stuff:
+    # You can "split" the current object of your focus with
+    # $mod+b or $mod+v, for horizontal and vertical splits
+    # respectively.
+    $mod+h splith
+    $mod+v splitv
+
+    # Switch the current container between different layout styles
+    $mod+s layout stacking
+    $mod+w layout tabbed
+    $mod+e layout toggle split
+
+    # Make the current focus fullscreen
+    $mod+f fullscreen
+
+    # Toggle the current focus between tiling and floating mode
+    $mod+Shift+space floating toggle
+
+    # Swap focus between the tiling area and the floating area
+    $mod+space focus mode_toggle
+
+    # Move focus to the parent container
+    $mod+a focus parent
+
+    # Scratchpad:
+    # Sway has a "scratchpad", which is a bag of holding for windows.
+    # You can send windows there and get them back later.
+
+    # Move the currently focused window to the scratchpad
+    $mod+Shift+minus move scratchpad
+
+    # Show the next scratchpad window or hide the focused scratchpad window.
+    # If there are multiple scratchpad windows, this command cycles through them.
+    $mod+minus scratchpad show
+}
+
+# Resizing containers:
+mode "resize" {
+    bindsym --to-code {
+        # left will shrink the containers width
+        # right will grow the containers width
+        # up will shrink the containers height
+        # down will grow the containers height
+        $left  resize shrink width  10px
+        $down  resize grow   height 10px
+        $up    resize shrink height 10px
+        $right resize grow   width  10px
+
+        # Ditto, with arrow keys
+        Left  resize shrink width  10px
+        Down  resize grow   height 10px
+        Up    resize shrink height 10px
+        Right resize grow   width  10px
+
+        # Return to default mode
+        Return mode "default"
+        Escape mode "default"
+    }
+}
+bindsym --to-code $mod+r mode "resize"
+
+
+# Colors
+set $white #ffffff
+set $gray #404040
+set $dark #202020
+set $black #000000
+set $urgent #008000
+
+# Frame colors          border    background   text     indicator   child_border
+client.focused          $gray     $gray        $white   $black      $black
+client.focused_inactive $dark     $dark        $white   $black      $black
+client.unfocused        $black    $black       $white   $black      $black
+client.urgent           $urgent   $urgent      $white   $black      $black
+client.placeholder      $black    $black       $white   $black      $black
+client.background       $black
+
+# Use waybar instead of default swaybar
+exec_always ~/.config/sway/waybar.sh
+
+# Power control shutdown/reboot/suspend:
+set $mode_system [S]uspend   [H]ibernate   [E]xit   [L]ock   [R]eboot   [P]oweroff
+
+mode "$mode_system" {
+    bindsym --to-code {
+        s exec systemctl suspend, mode "default"
+        h exec systemctl hibernate, mode "default"
+        e exec swaymsg exit
+        l exec swaylock -l -k --color "$black", mode "default"
+        r exec systemctl reboot -i
+        p exec systemctl poweroff -i
+        # back to normal: Enter or Escape
+        Return mode "default"
+        Escape mode "default"
+    }
+}
+bindsym --to-code $mod+Escape mode "$mode_system"
+
+
+# Screen lock
+bindsym --to-code $mod+Control+l exec swaylock --color "$black"
+
+# Screenshots
+bindsym --to-code --release {
+    # Full screenshot
+    Print exec "grim $HOME/Pictures/$(date +'screenshot_%F-%T.png')"
+    # Screenshot selected and save to buffer
+    Shift+Print exec "slurp | grim -g - - | wl-copy"
+    # Screenshot selected and save as file
+    $mod+Shift+Print exec "slurp | grim -g - $HOME/Pictures/$(date +'screenshot_%F-%T.png')"
+
+    ### Same with calc key
+    XF86Calculator exec "grim $HOME/Pictures/$(date +'screenshot_%F-%T.png')"
+    Shift+XF86Calculator exec "slurp | grim -g - - | wl-copy"
+    $mod+Shift+XF86Calculator exec "slurp | grim -g - $HOME/Pictures/$(date +'screenshot_%F-%T.png')"
+}
+
+bindsym --to-code {
+    # Pulse Audio controls (get sink list to chose appropriate: pactl list sinks)
+    $mod+Control+plus exec pactl set-sink-volume @DEFAULT_SINK@ +5%
+    $mod+Control+minus exec pactl set-sink-volume @DEFAULT_SINK@ -5%
+    $mod+Control+0 exec pactl set-sink-mute @DEFAULT_SINK@ toggle
+
+    # screen brightness controls
+    # XF86MonBrightnessUp exec light -A 10
+    # XF86MonBrightnessDown exec light -U 10
+    $mod+Shift+bracketright exec light -A 10
+    $mod+Shift+bracketleft exec light -U 10
+
+    # Media player controls
+    XF86AudioPlay exec playerctl play
+    XF86AudioPause exec playerctl pause
+    XF86AudioNext exec playerctl next
+    XF86AudioPrev exec playerctl previous
+
+    # Switch workspaces via arrow keys
+    $mod+Control+Left workspace prev
+    $mod+Control+Right workspace next
+    # Cycle through workspaces using ~ key
+    $mod+grave workspace next
+
+    # Mouse right clock on title - kill window
+    button3 kill
+
+    # Mouse middle-click - switch layout between split/tabbed/stacked
+    button2 layout toggle
+
+    # Move the current workspace to the next output
+    $mod+x move workspace to output right
+
+    # TODO: Translate selected text
+    $mod+z exec "$HOME/bin/translate.sh"
+
+    # Start menu (a program launcher)
+    $mod+d exec bemenu-run -b -p '>' --fn '$font $font-size' --tb '$urgent' --tf '$white' --hb '$urgent' --hf '$white'
+}
+
+### Autostart
+# Set env required for WebRTC sharing
+# https://wiki.archlinux.org/title/PipeWire
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
+# Apps and helpers
+exec dunst -config ~/.config/sway/dunstrc
+exec libinput-gestures -c ~/.config/sway/libinput-gestures.conf
+exec blueman-applet
+exec google-chrome-stable
+exec telegram-desktop
+
+
+### Include config files:
+include /etc/sway/config.d/*
+include $HOME/.config/sway/conf.d/*

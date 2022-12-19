@@ -1,0 +1,85 @@
+{
+    "spacing": 0, // Size of gaps in between of the different modules
+
+    "layer": "bottom", // Waybar at top layer
+    "position": "top", // Waybar position (top|bottom|left|right)
+    "height": 22, // Waybar height (to be removed for auto height)
+    // "width": 1280, // Waybar width
+
+    // Choose the order of the modules
+    "modules-left": [
+        "sway/workspaces",
+        "sway/mode"
+    ],
+    // "modules-center": ["sway/window"],
+    "modules-right": [
+        "pulseaudio",
+        "cpu",
+        "memory",
+        "disk",
+        "battery",
+        "clock",
+        "sway/language",
+        "tray"
+    ],
+    // Modules configuration
+    "sway/workspaces": {
+        "disable-scroll": false,
+        "all-outputs": true,
+        "format": "{name}"
+    },
+    "tray": {
+        "icon-size": 24,
+        "spacing": 8
+    },
+    "clock": {
+        "interval": 1,
+        "format": "{:%b %d.%m.%Y %H:%M:%S}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "format-alt": "{:%H:%M:%S}"
+    },
+    "cpu": {
+        "format": "cpu: {usage}%",
+        "tooltip": true
+    },
+    "memory": {
+        "format": "mem: {}%"
+    },
+    "disk": {
+        "interval": 30,
+        "format": "rootfs: {percentage_used}%",
+        "path": "/"
+    },
+    "battery": {
+        "states": {
+            "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "bat: {capacity}%",
+        "format-charging": "chr: {capacity}%",
+        "format-plugged": "plg: {capacity}%",
+        "format-alt": "bat: {time}",
+        // "format-good": "", // An empty format will hide the module
+        // "format-full": "",
+        "format-icons": ["", "", "", "", ""]
+    },
+    "network": {
+        // "interface": "wlp2*", // (Optional) To force the use of this interface
+        "format-wifi": "{essid} {ipaddr} {signalStrength}%",
+        "format-ethernet": "{ifname} {ipaddr}",
+        "format-linked": "{ifname} no IP",
+        "format-disconnected": "{ifname} disconnected",
+        "format-alt": "{ifname} {ipaddr}"
+    },
+    "pulseaudio": {
+        "scroll-step": 1, // %, can be a float
+        "format": "vol: {volume}% mic: {format_source}",
+        "format-bluetooth": "vol: {volume}% mic: {format_source}",
+        "format-bluetooth-muted": "muted {format_source}",
+        "format-muted": "muted {format_source}",
+        "format-source": "{volume}%",
+        "format-source-muted": "muted",
+        "on-click": "pavucontrol"
+    }
+}

@@ -1,0 +1,130 @@
+* {
+    border: none;
+    border-radius: 0;
+    /* `otf-font-awesome` is required to be installed for icons */
+    font-family: Noto Sans, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: #000000;
+    color: #ffffff;
+    transition-property: background-color;
+    transition-duration: .5s;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+#workspaces button {
+    padding: 0 10px;
+    background-color: transparent;
+    color: #ffffff;
+}
+
+/* https://github.com/Alexays/Waybar/wiki/FAQ#the-workspace-buttons-have-a-strange-hover-effect */
+#workspaces button:hover {
+    background: #000000;
+    box-shadow: inset 0px 0px 0px 1px rgba(255, 255, 255, 0.5);
+    text-shadow: inherit;
+}
+
+#workspaces button.focused {
+    background-color: #404040;
+}
+
+#workspaces button.urgent {
+    background-color: #008000;
+}
+
+#mode {
+    background-color: #008000;
+}
+
+#clock,
+#battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#language,
+#mpd,
+#window,
+#workspaces {
+    padding: 0 8px;
+    margin: 0 1px;
+    color: #ffffff;
+}
+
+/* If workspaces is the leftmost module, omit left margin */
+.modules-left > widget:first-child > #workspaces {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+/* If workspaces is the rightmost module, omit right margin */
+.modules-right > widget:last-child > #workspaces {
+    margin-right: 0;
+    padding-right: 0;
+}
+
+#battery.charging, #battery.plugged {
+    color: #ffffff;
+    background-color: #092715;
+}
+
+@keyframes blink {
+    to {
+        background-color: #ffffff;
+        color: #000000;
+    }
+}
+
+#battery.critical:not(.charging) {
+    background-color: #900200;
+    color: #ffffff;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+label:focus {
+    background-color: #000000;
+}
+
+#network.disconnected {
+    background-color: #900200;
+}
+
+#pulseaudio.muted {
+    background-color: #404040;
+}
+
+#language {
+    background: #404040;
+    min-width: 24px;
+}
+
+#temperature.critical {
+    background-color: #900200;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: #900200;
+}

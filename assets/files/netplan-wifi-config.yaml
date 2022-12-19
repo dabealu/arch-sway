@@ -1,0 +1,9 @@
+network:
+  version: 2
+  renderer: networkd
+  wifis:
+    _NETWORK_INTERFACE_:
+      dhcp4: true
+      access-points:
+        _WIFI_SSID_:
+          password: "_WIFI_PASSWORD_"
