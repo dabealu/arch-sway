@@ -1,0 +1,45 @@
+#
+# ~/.bashrc
+#
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+alias ls='ls --color=auto'
+
+PATH="$PATH:/home/$USER/bin"
+. "$HOME/.cargo/env"
+
+# customize PS1 prompt
+# colors:
+#     regular     \033[39m
+#     green       \033[92m
+#     blue        \033[94m
+#     cyan        \033[96m
+#     red         \033[91m
+#     yellow      \033[93m
+#     magenta     \033[95m
+# modes:
+#     bold        \033[1m
+#     dim         \033[2m
+#     underlined  \033[4m
+#     reverse     \033[7m
+#     reset       \033[0m
+# print colors:
+# for I in {3..4}; do
+#     for J in {0..7}; do
+#         echo -e "\033[0;$I$J;1m > this is \\\033[0;$I$J;1m \033[0m"
+#     done
+# done
+function prompt_command() {
+    if [[ $? -ne 0 ]]; then
+        local CLR_EXIT='\[\e[0;31;1m\]'
+    else
+        local CLR_EXIT='\[\e[0;32;1m\]'
+    fi
+    local CLR_PATH='\[\e[37;1m\]'
+    local CLR_RESET='\[\e[0m\]'
+    PS1="${CLR_PATH}\t \w ${CLR_EXIT}>${CLR_RESET} "
+}
+
+PROMPT_COMMAND="prompt_command"

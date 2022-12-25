@@ -1,7 +1,4 @@
 /target
-arch-sway-parameters.yaml
-arch-sway-progress
+arch-sway-*
 # temp:
-/src
-Cargo*
 NOTES.md
