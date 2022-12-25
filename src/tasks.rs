@@ -868,20 +868,23 @@ impl Task for Hibernation {
         run_cmd("mkinitcpio -p linux", false)?;
 
         // grub swap parameters
-        let swap_file_device = run_cmd("findmnt -no UUID -T /swapfile", true)?;
+        let swap_file_device = run_cmd("sudo findmnt -no UUID -T /swapfile", true)?;
 
         let mut swap_file_offset = "";
-        let output = run_cmd("filefrag -v /swapfile", true)?;
+        let output = run_cmd("sudo filefrag -v /swapfile", true)?;
+
         for line in output.lines() {
             let fields = line.split_whitespace().collect::<Vec<&str>>();
-            if fields[0] == ":0" {
+            if fields.starts_with(&["0:"]) {
                 swap_file_offset = fields[3].trim_end_matches("..");
                 break;
             }
         }
 
         let grub_params = &format!(
-            r##"GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet resume=UUID={swap_file_device} resume_offset={swap_file_offset}""##
+            r##"GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet resume=UUID={} resume_offset={}""##,
+            swap_file_device.trim(),
+            swap_file_offset.trim()
         );
 
         // default: GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"
