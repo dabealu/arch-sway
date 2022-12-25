@@ -13,10 +13,10 @@ fn main() {
     // Stage 1: chroot  //
     //------------------//
     // TODO: all steps must have uniq id and save it to progress file
-    r.add(Box::new(RequireUser::new("prep", "root")));
+    r.add(Box::new(RequireUser::new("chroot", "root")));
     r.add(Box::new(Command::new(
         "install_git",
-        "pacman -Sy --noconfirm git",
+        "pacman -Sy --noconfirm archlinux-keyring git",
         false,
         false,
     )));
@@ -60,8 +60,7 @@ fn main() {
     r.add(Box::new(Grub::new(p.clone())));
     r.add(Box::new(Info::new(&format!(
         "next steps: \
-        \n\treboot \
-        \n\tlogin as root \
+        \n\treboot, run as a root \
         \n\t./{}\n",
         tasks::BIN_FILE
     ))));
@@ -87,19 +86,19 @@ fn main() {
     r.add(Box::new(Command::new(
         "install_sway_packages",
         "pacman -Sy --noconfirm \
-        sway swaylock swayidle waybar light xorg-xwayland \
-        bemenu-wayland libnotify dunst wl-clipboard",
+            sway swaylock swayidle waybar light xorg-xwayland \
+            bemenu-wayland libnotify dunst wl-clipboard",
         false,
         false,
     )));
     r.add(Box::new(Command::new(
         "install_fonts_themes_utilities",
         "pacman -Sy --noconfirm \
-        grim slurp ddcutil lxappearance \
-        lshw pciutils usbutils \
-        ttf-liberation ttf-roboto ttf-dejavu noto-fonts \
-        noto-fonts-emoji noto-fonts-extra opendesktop-fonts \
-        materia-gtk-theme papirus-icon-theme adwaita-qt5",
+            grim slurp ddcutil lxappearance \
+            lshw pciutils usbutils \
+            ttf-liberation ttf-roboto ttf-dejavu noto-fonts \
+            noto-fonts-emoji noto-fonts-extra opendesktop-fonts \
+            materia-gtk-theme papirus-icon-theme adwaita-qt5",
         false,
         false,
     )));
@@ -108,7 +107,7 @@ fn main() {
     r.add(Box::new(Command::new(
         "install_desktop_apps",
         "pacman -Sy --noconfirm \
-            alacritty firefox code telegram-desktop \
+            alacritty code telegram-desktop \
             thunar evince xournalpp ristretto \
             transmission-gtk audacious vlc",
         false,
@@ -117,9 +116,9 @@ fn main() {
     r.add(Box::new(Command::new(
         "install_pipewire",
         "pacman -Sy --noconfirm \
-        pipewire pipewire-pulse wireplumber \
-        gst-plugin-pipewire xdg-desktop-portal-wlr \
-        pavucontrol",
+            pipewire pipewire-pulse wireplumber \
+            gst-plugin-pipewire xdg-desktop-portal-wlr \
+            pavucontrol",
         false,
         false,
     )));
