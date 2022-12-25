@@ -283,21 +283,21 @@ impl Task for Locales {
 
     fn run(&self) -> Result<String, TaskError> {
         replace_line(
-            "/etc/locale.gen",
+            "/mnt/etc/locale.gen",
             r"# *ru_RU.UTF-8 UTF-8",
             "ru_RU.UTF-8 UTF-8",
         )?;
 
         replace_line(
-            "/etc/locale.gen",
+            "/mnt/etc/locale.gen",
             r"# *en_US.UTF-8 UTF-8",
             "en_US.UTF-8 UTF-8",
         )?;
 
-        run_cmd("locale-gen", false)?;
+        run_cmd("arch-chroot /mnt locale-gen", false)?;
 
-        line_in_file("/etc/locale.conf", "LANG=en_US.UTF-8")?;
-        line_in_file("/etc/vconsole.conf", "KEYMAP=ru")
+        line_in_file("/mnt/etc/locale.conf", "LANG=en_US.UTF-8")?;
+        line_in_file("/mnt/etc/vconsole.conf", "KEYMAP=ru")
     }
 }
 
@@ -320,10 +320,10 @@ impl Task for Hostname {
 
     fn run(&self) -> Result<String, TaskError> {
         let hostname = &self.parameters.hostname;
-        text_file("/etc/hostname", hostname)?;
+        text_file("/mnt/etc/hostname", hostname)?;
         // TODO: use proper templating
         text_file(
-            "/etc/hosts",
+            "/mnt/etc/hosts",
             &format!(
                 "# Static table lookup for hostnames. \
                 # See hosts(5) for details. \
@@ -361,26 +361,32 @@ impl Task for User {
         // TODO: use stdlib for user management?
         run_shell(
             &format!(
-                "groupadd -g {usergid} {username} && \
-                useradd -m -u {userid} -g {usergid} {username} && \
-                usermod -aG wheel,audio,video,storage {username}"
+                "arch-chroot /mnt groupadd -g {usergid} {username} && \
+                arch-chroot /mnt useradd -m -u {userid} -g {usergid} {username} && \
+                arch-chroot /mnt usermod -aG wheel,audio,video,storage {username}"
             ),
             false,
         )?;
 
         // add user to sudoers
         replace_line(
-            "/etc/sudoers",
+            "/mnt/etc/sudoers",
             "^# *%wheel.*NOPASSWD.*$",
             "%wheel ALL=(ALL:ALL) NOPASSWD: ALL",
         )?;
 
         // set default password for user and root
-        run_shell(&format!("echo -e '1\n1' | passwd {username}"), false)?;
-        run_shell(&format!("echo -e '1\n1' | passwd"), false)?;
+        run_shell(
+            &format!(r##"arch-chroot /mnt bash -c "echo -e '1\n1' | passwd {username}""##),
+            false,
+        )?;
+        run_shell(
+            r##"arch-chroot /mnt bash -c "echo -e '1\n1' | passwd root""##,
+            false,
+        )?;
 
         Ok(format!(
-            "warning: {username} and root passwords are set to '1'"
+            "warning: root and {username} passwords are set to '1'"
         ))
     }
 }
@@ -403,15 +409,15 @@ impl Task for Grub {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        run_cmd("mkdir -p /boot/grub", false)?;
+        run_cmd("mkdir -p /mnt/boot/grub", false)?;
 
         if self.parameters.efi {
             // TODO: use separate functions instead of shell scripts
             run_shell(
                 &format!(
-                    "mkdir -p /boot/EFI && \
-                    mount /dev/{}{}1 /boot/EFI && \
-                    grub-install --target=x86_64-efi --bootloader-id=grub_uefi --recheck",
+                    "mkdir -p /mnt/boot/EFI && \
+                    arch-chroot /mnt mount /dev/{}{}1 /boot/EFI && \
+                    arch-chroot /mnt grub-install --target=x86_64-efi --bootloader-id=grub_uefi --recheck",
                     self.parameters.block_device, self.parameters.part_num_prefix
                 ),
                 false,
@@ -419,14 +425,17 @@ impl Task for Grub {
         } else {
             run_cmd(
                 &format!(
-                    "grub-install --recheck --target=i386-pc /dev/{}",
+                    "arch-chroot /mnt grub-install --recheck --target=i386-pc /dev/{}",
                     self.parameters.block_device
                 ),
                 false,
             )?;
         }
 
-        run_cmd("grub-mkconfig -o /boot/grub/grub.cfg", false)
+        run_cmd(
+            "arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg",
+            false,
+        )
     }
 }
 
@@ -587,7 +596,7 @@ impl Netplan {
 
 impl Task for Netplan {
     fn name(&self) -> String {
-        "apply_netplan_configuration".to_string()
+        "netplan_configuration".to_string()
     }
 
     fn run(&self) -> Result<String, TaskError> {

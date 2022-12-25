@@ -1,7 +1,7 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use std::{env, fs, io, str, path::Path};
+use std::{env, fs, io, path::Path, str};
 
 pub const PARAMETERS_FILE: &str = "arch-sway-parameters.yaml";
 

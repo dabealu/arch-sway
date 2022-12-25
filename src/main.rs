@@ -9,9 +9,9 @@ fn main() {
     let p = parameters::Parameters::build();
     let mut r = TaskRunner::new();
 
-    //----------------//
-    // Stage 0: prep  //
-    //----------------//
+    //------------------//
+    // Stage 1: chroot  //
+    //------------------//
     // TODO: all steps must have uniq id and save it to progress file
     r.add(Box::new(RequireUser::new("prep", "root")));
     r.add(Box::new(Command::new(
@@ -43,26 +43,12 @@ fn main() {
         false,
         true,
     )));
-    r.add(Box::new(Info::new(&format!(
-        "next steps: \
-        \n\tarch-chroot /mnt \
-        \n\tcd /root && ./{}\n",
-        tasks::BIN_FILE
-    ))));
-    r.add(Box::new(StageCompleted::new(
-        "prep_stage_completed",
-        "/mnt/root/",
-    )));
-
-    //-----------------//
-    // Stage 1: chroot //
-    //-----------------//
-    r.add(Box::new(RequireUser::new("chroot", "root")));
+    // tasks within arch-chroot
     r.add(Box::new(Command::new(
         "set_timezone",
-        // TODO: use stdlib
         &format!(
-            "ln -sf /usr/share/zoneinfo/{} /etc/localtime && hwclock --systohc",
+            "arch-chroot /mnt ln -sf /usr/share/zoneinfo/{} /etc/localtime && \
+            arch-chroot /mnt hwclock --systohc",
             &p.timezone
         ),
         false,
@@ -79,7 +65,10 @@ fn main() {
         \n\t./{}\n",
         tasks::BIN_FILE
     ))));
-    r.add(Box::new(StageCompleted::new("chroot_stage_completed", "")));
+    r.add(Box::new(StageCompleted::new(
+        "chroot_stage_completed",
+        "/mnt/root",
+    )));
 
     //------------------//
     // Stage 2: install //
@@ -128,9 +117,9 @@ fn main() {
     r.add(Box::new(Command::new(
         "install_pipewire",
         "pacman -Sy --noconfirm \
-            pipewire pipewire-pulse wireplumber \
-            gst-plugin-pipewire xdg-desktop-portal-wlr \
-            pavucontrol",
+        pipewire pipewire-pulse wireplumber \
+        gst-plugin-pipewire xdg-desktop-portal-wlr \
+        pavucontrol",
         false,
         false,
     )));
@@ -143,12 +132,18 @@ fn main() {
     r.add(Box::new(CpuGovernor::new()));
     r.add(Box::new(Bluetooth::new()));
     r.add(Box::new(Docker::new(p.clone())));
+    r.add(Box::new(Command::new(
+        "install_rust_toolchain",
+        "sudo pacman -Sy --noconfirm rustup && \
+        rustup toolchain install stable",
+        false,
+        true,
+    )));
     r.add(Box::new(Info::new(&format!(
         "next steps: \
-        \n\treboot, login as {}, start sway, and run final stage: \
+        \n\treboot and run as a regular user: \
         \n\t./{}\n",
-        &p.username,
-        tasks::BIN_FILE
+        &p.username
     ))));
     r.add(Box::new(StageCompleted::new(
         "install_stage_completed",
@@ -159,28 +154,25 @@ fn main() {
     // Stage 3: user //
     //---------------//
     // TODO: lot of bash it this stage
-    r.add(Box::new(RequireUser::new("nonroot", &p.username)));
     r.add(Box::new(Command::new(
         "chown_moved_files",
         &format!("sudo chown -R {}:{} ~/*", p.username, p.username),
         false,
         true,
     )));
+    r.add(Box::new(RequireUser::new("nonroot", &p.username)));
     r.add(Box::new(Command::new(
         "install_yay_aur",
-        "mkdir -p ~/projects && \
-        cd ~/projects  && \
-        git clone https://aur.archlinux.org/yay-git.git  && \
-        cd yay-git  && \
+        "mkdir -p ~/projects && cd ~/projects && \
+        git clone https://aur.archlinux.org/yay-git.git && \
+        cd yay-git && \
         makepkg --noconfirm -si",
         false,
         true,
     )));
     r.add(Box::new(Command::new(
         "install_aur_packages",
-        r##"pacman -Sy --noconfirm meson && \
-        echo y | LANG=C yay --noprovides --answerdiff All --answerclean All \
-            --mflags "--noconfirm" -Sy wdisplays google-chrome libinput-gestures"##,
+        "yes | yay --noconfirm -Sy wdisplays google-chrome libinput-gestures",
         false,
         true,
     )));
@@ -198,7 +190,7 @@ fn main() {
         true,
     )));
     r.add(Box::new(Bashrc::new(p)));
-    r.add(Box::new(Info::new("installation complete!")));
+    r.add(Box::new(Info::new("installation finished successfully!")));
     r.add(Box::new(StageCompleted::new("user_stage_completed", "")));
 
     //-----------//

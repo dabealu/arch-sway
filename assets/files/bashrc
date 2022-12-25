@@ -8,7 +8,6 @@
 alias ls='ls --color=auto'
 
 PATH="$PATH:/home/$USER/bin"
-. "$HOME/.cargo/env"
 
 # customize PS1 prompt
 # colors:
