@@ -134,7 +134,7 @@ fn main() {
     r.add(Box::new(Command::new(
         "install_rust_toolchain",
         "sudo pacman -Sy --noconfirm rustup && \
-        rustup toolchain install stable",
+        rustup default stable",
         false,
         true,
     )));
@@ -142,7 +142,7 @@ fn main() {
         "next steps: \
         \n\treboot and run as a regular user: \
         \n\t./{}\n",
-        &p.username
+        BIN_FILE
     ))));
     r.add(Box::new(StageCompleted::new(
         "install_stage_completed",

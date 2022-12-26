@@ -2,10 +2,12 @@
 arch + sway installation.
 
 to start the installation:
-- connect to wifi and install git:
+- connect to wifi:
 ```s
+WIFI_SSID='somessid'
+WIFI_PASSWD='p4$$w0rd'
 ip link set wlan0 up
-wpa_supplicant -B -i wlan0 -c <(wpa_passphrase "WIFI_SSID" "$WIFI_PASSWORD")
+wpa_supplicant -B -i wlan0 -c <(wpa_passphrase "WIFI_SSID" "$WIFI_PASSWD")
 dhcpcd
 ```
 - install and run `wavemon` to scan wifi networks if needed
@@ -15,6 +17,11 @@ dhcpcd
 `CTRL+b` and `SHIFT+"` or `SIFT+%` to split, `CTRL+b` and `up|down` to change focus.
 
 ## notes
+
+### running on VM
+- select `QXL` video device in QEMU, run sway via `WLR_NO_HARDWARE_CURSORS=1 sway`
+- archiso have sshd and root password access enabled, so it's easy to kickstart installation via `scp`/`ssh`
+
 ### flashing black screen during installation
 laptop may enter into loop with flashing black screen after selecting install from boot menu.
 select `install`, but press `e` instead of `enter` to edit kernel parameters, add `nomodeset` parameter:

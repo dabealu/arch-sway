@@ -1,7 +1,7 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use std::{env, fs, io, path::Path, str};
+use std::{env, fmt, fs, io, path::Path, process, str};
 
 pub const PARAMETERS_FILE: &str = "arch-sway-parameters.yaml";
 
@@ -20,6 +20,16 @@ pub struct Parameters {
     pub wifi_enabled: bool,
     pub wifi_ssid: String,
     pub wifi_password: String,
+}
+
+impl fmt::Display for Parameters {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Ok(yaml) = serde_yaml::to_string(&self) {
+            write!(f, "{}", yaml)
+        } else {
+            write!(f, "{:?}", &self)
+        }
+    }
 }
 
 impl Parameters {
@@ -135,7 +145,23 @@ impl Parameters {
             wifi_password: wifi_passwd,
         };
 
-        println!("{res:?}");
+        println!("\n---\nparameters:\n{res}");
+
+        // ask for confirmation before install
+        loop {
+            let proceed = ask_user_input("proceed with installation [yn]");
+            match proceed.to_lowercase().as_str() {
+                "y" => break,
+                "n" => {
+                    println!("exiting...");
+                    process::exit(0);
+                }
+                _ => {
+                    println!("unknown input '{proceed}', please enter y or n");
+                }
+            }
+        }
+
         res
     }
 }
