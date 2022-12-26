@@ -131,13 +131,6 @@ fn main() {
     r.add(Box::new(CpuGovernor::new()));
     r.add(Box::new(Bluetooth::new()));
     r.add(Box::new(Docker::new(p.clone())));
-    r.add(Box::new(Command::new(
-        "install_rust_toolchain",
-        "sudo pacman -Sy --noconfirm rustup && \
-        rustup default stable",
-        false,
-        true,
-    )));
     r.add(Box::new(Info::new(&format!(
         "next steps: \
         \n\treboot and run as a regular user: \
@@ -160,6 +153,13 @@ fn main() {
         true,
     )));
     r.add(Box::new(RequireUser::new("nonroot", &p.username)));
+    r.add(Box::new(Command::new(
+        "install_rust_toolchain",
+        "sudo pacman -Sy --noconfirm rustup && \
+        rustup default stable",
+        false,
+        true,
+    )));
     r.add(Box::new(Command::new(
         "install_yay_aur",
         "mkdir -p ~/projects && cd ~/projects && \

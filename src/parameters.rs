@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use std::process::Command;
 use std::{env, fmt, fs, io, path::Path, process, str};
 
+use crate::base_methods::*;
+
 pub const PARAMETERS_FILE: &str = "arch-sway-parameters.yaml";
+const NETWORK_INTERFACES_REGEX: &str = r"^(wlan|wlp|eth|enp).*";
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Parameters {
@@ -104,9 +107,19 @@ impl Parameters {
 
         // network interface
         let net_devices = list_net_dev().unwrap();
-        let mut net_dev = ask_user_input(&format!("network interface {:?}:", net_devices));
+        if net_devices.is_empty() {
+            panic!(
+                "fatal: cannot find (regex: {}) any network interface!",
+                NETWORK_INTERFACES_REGEX
+            );
+        }
+        let default_net_dev = net_devices[0].clone();
+
+        let mut net_dev = ask_user_input(&format!(
+            "network interface (available:{net_devices:?}) [{default_net_dev}]:"
+        ));
         if net_dev.len() == 0 {
-            net_dev = net_devices[0].clone();
+            net_dev = default_net_dev;
         }
 
         // wifi
@@ -129,6 +142,29 @@ impl Parameters {
             wifi_passwd = env_or_input("WIFI_PASSWD", "wifi password:");
         }
 
+        // archiso using traditional interface naming like eth0, wla0, etc
+        // but later interfaces renamed using udev
+        // so it's required to get "real" interface name during archiso phase
+        // example:
+        // udevadm test-builtin net_id /sys/class/net/wlan0 | grep ID_NET_NAME_PATH
+        // ID_NET_NAME_PATH=wlp1s0
+        let udev_output = run_cmd(
+            &format!("udevadm test-builtin net_id /sys/class/net/{net_dev}"),
+            true,
+        )
+        .unwrap();
+
+        // TODO: consider moving "grepping" into separate fn
+        for line in udev_output.lines() {
+            if line.starts_with("ID_NET_NAME_PATH=") {
+                let net_dev_after_rename = line.split("=").collect::<Vec<&str>>()[1].to_string();
+                if net_dev != net_dev_after_rename {
+                    println!("info: {net_dev} will be renamed to {net_dev_after_rename} after archiso phase");
+                    net_dev = net_dev_after_rename;
+                }
+            }
+        }
+
         let res = Parameters {
             efi: efi,
             block_device: block_dev,
@@ -149,7 +185,7 @@ impl Parameters {
 
         // ask for confirmation before install
         loop {
-            let proceed = ask_user_input("proceed with installation [yn]");
+            let proceed = ask_user_input("proceed with the installation? [yn]");
             match proceed.to_lowercase().as_str() {
                 "y" => break,
                 "n" => {
@@ -193,7 +229,7 @@ fn env_or_input(var: &str, msg: &str) -> String {
 
 fn list_net_dev() -> Result<Vec<String>, io::Error> {
     let mut res: Vec<String> = vec![];
-    let re = Regex::new(r"^(wlan|wlp|eth|enp).*").unwrap();
+    let re = Regex::new(NETWORK_INTERFACES_REGEX).unwrap();
 
     for entry_result in fs::read_dir("/sys/class/net/")?.into_iter() {
         if let Ok(entry) = entry_result?.file_name().into_string() {
@@ -227,9 +263,7 @@ fn list_block_dev() -> Vec<String> {
     }
 }
 
-// -------------------------
 // TODO: tests
-// -------------------------
 #[cfg(test)]
 mod tests {
     use super::*;

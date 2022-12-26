@@ -4,10 +4,10 @@ arch + sway installation.
 to start the installation:
 - connect to wifi:
 ```s
-WIFI_SSID='somessid'
-WIFI_PASSWD='p4$$w0rd'
+export WIFI_SSID='somessid'
+export WIFI_PASSWD='p4$$w0rd'
 ip link set wlan0 up
-wpa_supplicant -B -i wlan0 -c <(wpa_passphrase "WIFI_SSID" "$WIFI_PASSWD")
+wpa_supplicant -B -i wlan0 -c <(wpa_passphrase "$WIFI_SSID" "$WIFI_PASSWD")
 dhcpcd
 ```
 - install and run `wavemon` to scan wifi networks if needed
