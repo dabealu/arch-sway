@@ -1,6 +1,8 @@
 # sway on arch
 arch + sway installation.
 
+TODO: describe two ways to install - vanilla iso+ssh and prebaked iso with binary included
+
 to start the installation:
 - connect to wifi:
 ```s
@@ -17,6 +19,10 @@ dhcpcd
 `CTRL+b` and `SHIFT+"` or `SIFT+%` to split, `CTRL+b` and `up|down` to change focus.
 
 ## notes
+
+### archiso
+to crete iso with `arch-sway` binary included, run `create-iso.sh`.
+archiso doc - https://wiki.archlinux.org/title/archiso
 
 ### running on VM
 - select `QXL` video device in QEMU, run sway via `WLR_NO_HARDWARE_CURSORS=1 sway`

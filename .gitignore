@@ -1,4 +1,6 @@
-/target
 arch-sway-*
+target/
+archiso/
+archlinux-iso/
 # temp:
 NOTES.md
