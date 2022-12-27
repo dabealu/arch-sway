@@ -60,6 +60,16 @@ impl Parameters {
     }
 
     fn request_user_parameters() -> Parameters {
+        // TODO: parse cli flags
+        // implement flags:
+        // - dry run - print execution plan
+        // - include/exclude wifi configuration (in case binary pre-baked into iso)
+        let args: Vec<String> = env::args().collect();
+        if args.len() > 1 {
+            //
+        }
+
+        // TODO: deconstruct this fn into small fns
         println!("enter parameters:");
 
         // EFI
