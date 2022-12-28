@@ -177,14 +177,11 @@ impl Parameters {
         .unwrap();
 
         // TODO: consider moving "grepping" into separate fn
-        let mut net_dev = net_dev_iso.clone();
+        let mut net_dev = "".to_string();
         for line in udev_output.lines() {
-            if line.starts_with("ID_NET_NAME_PATH=") {
-                let net_id = line.split("=").collect::<Vec<&str>>()[1].to_string();
-                if net_dev != net_dev_iso {
-                    net_dev = net_id;
-                    println!("{net_dev_iso} will be renamed to {net_dev} after archiso");
-                }
+            if line.starts_with("ID_NET_NAME_PATH") {
+                net_dev = line.split("=").collect::<Vec<&str>>()[1].to_string();
+                println!("{net_dev_iso} will be named {net_dev} after archiso");
             }
         }
 

@@ -1,6 +1,6 @@
 use std::fs::Permissions;
 use std::os::unix::prelude::PermissionsExt;
-use std::{error::Error, fmt, fs, io::ErrorKind, path::Path, process};
+use std::{error::Error, fmt, fs, io::ErrorKind, path::Path, process, thread, time};
 
 use crate::parameters::Parameters;
 use crate::{base_methods::*, parameters};
@@ -651,6 +651,8 @@ impl Task for Netplan {
         }
 
         run_cmd("netplan apply", false)?;
+        // wait a bit until network is fully up
+        thread::sleep(time::Duration::from_secs(3));
         run_cmd("netplan get all", true)
     }
 }
@@ -1108,6 +1110,10 @@ impl Task for WifiConnect {
                 self.parameters.wifi_ssid, self.parameters.wifi_password
             ),
             false,
-        )
+        )?;
+
+        // pause until network is up
+        thread::sleep(time::Duration::from_secs(3));
+        Ok("".to_string())
     }
 }

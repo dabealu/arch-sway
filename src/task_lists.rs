@@ -12,12 +12,12 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Box::new(WifiConnect::new(parameters.clone())));
     r.add(Box::new(Command::new(
         "install_git",
-        "pacman -Sy --noconfirm archlinux-keyring git",
+        "pacman -Sy --noconfirm git",
         false,
         false,
     )));
     r.add(Box::new(GitRepo::new(
-        "clone_arch_sway_repo",
+        "arch_sway_repo",
         "https://github.com/dabealu/arch-sway.git",
         "arch-sway-repo",
     )));

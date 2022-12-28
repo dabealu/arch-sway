@@ -7,7 +7,7 @@ two main options:
 
 
 ## installation
-run `arch-sway` and follow the instructions.
+run `./arch-sway` and follow the instructions.
 
 `tmux` can help to keep several terminals open for debugging:
 `CTRL+b` and `SHIFT+"` or `SIFT+%` to split, `CTRL+b` and `up|down` to change focus.
