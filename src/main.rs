@@ -7,9 +7,9 @@ use std::env;
 use task_lists::*;
 
 const HELP_MESSAGE: &str = "available flags:
-* list             - print list of tasks without execution
-* install          - run tasks to install system
-* sync             - sync configs on installed system from git
+* list             - print tasks list without execution
+* install          - run tasks to install the system
+* sync             - use git source to sync configs 
 * start-from       - start installation from specific task
 * clear-progress   - remove file with saved progress";
 
