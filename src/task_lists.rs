@@ -9,6 +9,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     // Stage 1: chroot  //
     //------------------//
     r.add(Box::new(RequireUser::new("chroot", "root")));
+    r.add(Box::new(WifiConnect::new(parameters.clone())));
     r.add(Box::new(Command::new(
         "install_git",
         "pacman -Sy --noconfirm archlinux-keyring git",

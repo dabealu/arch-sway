@@ -36,6 +36,13 @@ pub fn load_progress() -> Result<String, TaskError> {
     }
 }
 
+pub fn clear_progress() -> Result<(), TaskError> {
+    if let Err(e) = fs::remove_file(PROGRESS_FILE) {
+        return Err(TaskError::new(&e.to_string()));
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone)]
 pub struct TaskError {
     message: String,
@@ -68,6 +75,23 @@ impl TaskRunner {
 
     pub fn add(&mut self, task: Box<dyn Task>) {
         self.tasks.push(task);
+    }
+
+    pub fn list(&self) {
+        for t in &self.tasks {
+            let task_name = t.name();
+            if !task_name.is_empty() {
+                println!("\x1b[94m\x1b[1m▒▒ {task_name}\x1b[0m");
+            }
+        }
+    }
+
+    pub fn run_from(&self, task_id: &str) {
+        if let Err(e) = save_progress("", task_id) {
+            println!("failed to overwrite current task: {e}");
+            process::exit(1);
+        }
+        self.run();
     }
 
     pub fn run(&self) {
@@ -536,14 +560,14 @@ impl Task for Network {
         text_file(
             &format!(
                 "/etc/systemd/network/{}-dhcp.network",
-                self.parameters.network_interface
+                self.parameters.net_dev
             ),
             &format!(
                 "[Match] \
                 \nName={} \
                 \n[Network] \
                 \nDHCP=yes\n",
-                self.parameters.network_interface
+                self.parameters.net_dev
             ),
         )?;
 
@@ -609,7 +633,7 @@ impl Task for Netplan {
             match fs::read_to_string(format!("{REPO_PATH}/assets/files/netplan-wifi-config.yaml")) {
                 Ok(template) => {
                     let content = template
-                        .replace("_NETWORK_INTERFACE_", &self.parameters.network_interface)
+                        .replace("_NETWORK_INTERFACE_", &self.parameters.net_dev)
                         .replace("_WIFI_SSID_", &self.parameters.wifi_ssid)
                         .replace("_WIFI_PASSWORD_", &self.parameters.wifi_password);
                     text_file("/etc/netplan/wifi-config.yaml", &content)?;
@@ -619,8 +643,7 @@ impl Task for Netplan {
         } else {
             match fs::read_to_string(format!("{REPO_PATH}/assets/files/netplan-eth-config.yaml")) {
                 Ok(template) => {
-                    let content =
-                        template.replace("_NETWORK_INTERFACE_", &self.parameters.network_interface);
+                    let content = template.replace("_NETWORK_INTERFACE_", &self.parameters.net_dev);
                     text_file("/etc/netplan/eth-config.yaml", &content)?;
                 }
                 Err(e) => return Err(TaskError::new(&e.to_string())),
@@ -1045,5 +1068,46 @@ impl Task for Bashrc {
         )?;
 
         Ok("".to_string())
+    }
+}
+
+pub struct WifiConnect {
+    parameters: Parameters,
+}
+
+impl WifiConnect {
+    pub fn new(parameters: Parameters) -> WifiConnect {
+        WifiConnect {
+            parameters: parameters,
+        }
+    }
+}
+
+impl Task for WifiConnect {
+    fn name(&self) -> String {
+        format!("conncect_to_wifi_ssid_{}", &self.parameters.wifi_ssid)
+    }
+
+    fn run(&self) -> Result<String, TaskError> {
+        // skip if wifi disabled or network is already configured
+        if !self.parameters.wifi_enabled {
+            return Ok("".to_string());
+        }
+        // following command produces no output (len=0) if default route not present
+        if let Ok(route) = run_cmd("ip route show default", true) {
+            if route.len() > 0 {
+                return Ok("".to_string());
+            }
+        }
+        let wlan = &self.parameters.net_dev_iso;
+        run_shell(
+            &format!(
+                "ip link set {wlan} up && \
+                wpa_supplicant -B -i {wlan} -c <(wpa_passphrase '{}' '{}') && \
+                dhcpcd",
+                self.parameters.wifi_ssid, self.parameters.wifi_password
+            ),
+            false,
+        )
     }
 }

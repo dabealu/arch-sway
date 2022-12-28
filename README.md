@@ -1,32 +1,39 @@
 # sway on arch
 arch + sway installation.
 
-TODO: describe two ways to install - vanilla iso+ssh and prebaked iso with binary included
+two main options:
+- prepare installation media with binary included, see `archiso` note
+- use vanilla iso, and copy binary to device running archiso environment (using curl/ssh/etc)
 
-to start the installation:
-- connect to wifi:
-```s
-export WIFI_SSID='somessid'
-export WIFI_PASSWD='p4$$w0rd'
-ip link set wlan0 up
-wpa_supplicant -B -i wlan0 -c <(wpa_passphrase "$WIFI_SSID" "$WIFI_PASSWD")
-dhcpcd
-```
-- install and run `wavemon` to scan wifi networks if needed
-- run `./arch-sway` and follow the instructions
+
+## installation
+run `arch-sway` and follow the instructions.
 
 `tmux` can help to keep several terminals open for debugging:
 `CTRL+b` and `SHIFT+"` or `SIFT+%` to split, `CTRL+b` and `up|down` to change focus.
 
+
 ## notes
 
+### manual wifi configuration
+```s
+WIFI_SSID='somessid'
+WIFI_PASSWD='p4$$w0rd'
+ip link set wlan0 up
+wpa_supplicant -B -i wlan0 -c <(wpa_passphrase "$WIFI_SSID" "$WIFI_PASSWD")
+dhcpcd
+```
+`wavemon` can help to scan wifi networks
+
 ### archiso
-to crete iso with `arch-sway` binary included, run `create-iso.sh`.
+to crete iso with `arch-sway` binary included:
+- install package `pacman -Sy archiso`
+- run `create-iso.sh`
 archiso doc - https://wiki.archlinux.org/title/archiso
 
 ### running on VM
 - select `QXL` video device in QEMU, run sway via `WLR_NO_HARDWARE_CURSORS=1 sway`
-- archiso have sshd and root password access enabled, so it's easy to kickstart installation via `scp`/`ssh`
+- archiso environment have sshd and root password access enabled - easy to upload binary and start installation using `scp`/`ssh`
 
 ### flashing black screen during installation
 laptop may enter into loop with flashing black screen after selecting install from boot menu.

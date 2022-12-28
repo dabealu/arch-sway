@@ -19,7 +19,8 @@ pub struct Parameters {
     pub username: String,
     pub user_id: String,
     pub user_gid: String,
-    pub network_interface: String,
+    pub net_dev: String,
+    pub net_dev_iso: String, // wlan0, eth0 in archiso renamed to wlp, enp after
     pub wifi_enabled: bool,
     pub wifi_ssid: String,
     pub wifi_password: String,
@@ -59,16 +60,27 @@ impl Parameters {
         params
     }
 
-    fn request_user_parameters() -> Parameters {
-        // TODO: parse cli flags
-        // implement flags:
-        // - dry run - print execution plan
-        // - include/exclude wifi configuration (in case binary pre-baked into iso)
-        let args: Vec<String> = env::args().collect();
-        if args.len() > 1 {
-            //
+    pub fn dummy() -> Parameters {
+        let s = "".to_string();
+        Parameters {
+            efi: true,
+            block_device: s.clone(),
+            part_num: 0,
+            part_num_prefix: s.clone(),
+            timezone: s.clone(),
+            hostname: s.clone(),
+            username: s.clone(),
+            user_id: s.clone(),
+            user_gid: s.clone(),
+            net_dev: s.clone(),
+            net_dev_iso: s.clone(),
+            wifi_enabled: true,
+            wifi_ssid: "MyWiFi".to_string(),
+            wifi_password: s,
         }
+    }
 
+    fn request_user_parameters() -> Parameters {
         // TODO: deconstruct this fn into small fns
         println!("enter parameters:");
 
@@ -123,26 +135,26 @@ impl Parameters {
                 NETWORK_INTERFACES_REGEX
             );
         }
-        let default_net_dev = net_devices[0].clone();
+        let net_dev_default = net_devices[0].clone();
 
-        let mut net_dev = ask_user_input(&format!(
-            "network interface (available:{net_devices:?}) [{default_net_dev}]:"
+        let mut net_dev_iso = ask_user_input(&format!(
+            "network interface (available:{net_devices:?}) [{net_dev_default}]:"
         ));
-        if net_dev.len() == 0 {
-            net_dev = default_net_dev;
+        if net_dev_iso.len() == 0 {
+            net_dev_iso = net_dev_default;
         }
 
         // wifi
         let mut default_wifi = false;
-        if net_dev.starts_with("wlan") || net_dev.starts_with("wlp") {
+        if net_dev_iso.starts_with("wlan") || net_dev_iso.starts_with("wlp") {
             default_wifi = true;
         }
-        let wifi_str = ask_user_input(&format!("use wifi [{default_wifi}]"));
-        let wifi = match &wifi_str[..] {
+        let wifi_str = ask_user_input(&format!("configure wifi [{default_wifi}]"));
+        let wifi = match wifi_str.as_ref() {
             "" => default_wifi,
             "true" => true,
             "false" => false,
-            _ => panic!("use wifi is a boolean parameter"), // TODO: move to separate fn and retry ask input
+            _ => panic!("configure wifi is a boolean parameter"), // TODO: move to separate fn and retry ask input
         };
 
         let mut wifi_ssid = "".to_string();
@@ -152,25 +164,26 @@ impl Parameters {
             wifi_passwd = env_or_input("WIFI_PASSWD", "wifi password:");
         }
 
-        // archiso using traditional interface naming like eth0, wla0, etc
-        // but later interfaces renamed using udev
-        // so it's required to get "real" interface name during archiso phase
+        // archiso uses traditional interface naming like eth0, wla0, etc
+        // but interfaces named by udev during later stages (e.g. enp, wlp),
+        // so it's required to get "real" interface name during archiso.
         // example:
         // udevadm test-builtin net_id /sys/class/net/wlan0 | grep ID_NET_NAME_PATH
-        // ID_NET_NAME_PATH=wlp1s0
+        // ID_NET_NAME_PATH=wlp1s0  <<<<<-------------^^^^^
         let udev_output = run_cmd(
-            &format!("udevadm test-builtin net_id /sys/class/net/{net_dev}"),
+            &format!("udevadm test-builtin net_id /sys/class/net/{net_dev_iso}"),
             true,
         )
         .unwrap();
 
         // TODO: consider moving "grepping" into separate fn
+        let mut net_dev = net_dev_iso.clone();
         for line in udev_output.lines() {
             if line.starts_with("ID_NET_NAME_PATH=") {
-                let net_dev_after_rename = line.split("=").collect::<Vec<&str>>()[1].to_string();
-                if net_dev != net_dev_after_rename {
-                    println!("info: {net_dev} will be renamed to {net_dev_after_rename} after archiso phase");
-                    net_dev = net_dev_after_rename;
+                let net_id = line.split("=").collect::<Vec<&str>>()[1].to_string();
+                if net_dev != net_dev_iso {
+                    net_dev = net_id;
+                    println!("{net_dev_iso} will be renamed to {net_dev} after archiso");
                 }
             }
         }
@@ -185,7 +198,8 @@ impl Parameters {
             username: user,
             user_id: "1000".to_string(),
             user_gid: "1000".to_string(),
-            network_interface: net_dev,
+            net_dev: net_dev,
+            net_dev_iso: net_dev_iso,
             wifi_enabled: wifi,
             wifi_ssid: wifi_ssid,
             wifi_password: wifi_passwd,
