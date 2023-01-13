@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use std::fs::Permissions;
 use std::os::unix::prelude::PermissionsExt;
-use std::{error::Error, fmt, fs, io::ErrorKind, path::Path, process, thread, time};
+use std::{error::Error, io::ErrorKind, path::Path};
+use std::{fmt, fs, process, thread, time};
 
 use crate::parameters::Parameters;
 use crate::{base_methods::*, parameters};
@@ -674,13 +676,19 @@ impl Task for Variables {
         let vars = vec![
             "EDITOR=vim",
             "LIBSEAT_BACKEND=logind",
-            "GTK_THEME=Materia:dark",
-            "QT_STYLE_OVERRIDE=Adwaita-dark",
-            "WLR_DRM_NO_MODIFIERS=1",
             "XDG_CURRENT_DESKTOP=sway",
             "XDG_SESSION_TYPE=wayland",
+            "WLR_DRM_NO_MODIFIERS=1",
+            "# WLR_RENDERER=vulkan",
             "QT_QPA_PLATFORM=wayland",
             "QT_WAYLAND_DISABLE_WINDOWDECORATION=1",
+            "QT_STYLE_OVERRIDE=Adwaita-dark",
+            "GTK_THEME=Materia:dark",
+            "CLUTTER_BACKEND=wayland",
+            "SDL_VIDEODRIVER=wayland",
+            "ELM_DISPLAY=wl",
+            "ELM_ACCEL=opengl",
+            "ECORE_EVAS_ENGINE=wayland_egl",
         ];
         for var in vars {
             if let Err(e) = line_in_file("/etc/environment", var) {
@@ -1087,7 +1095,7 @@ impl WifiConnect {
 
 impl Task for WifiConnect {
     fn name(&self) -> String {
-        format!("conncect_to_wifi_ssid_{}", &self.parameters.wifi_ssid)
+        format!("connect_to_wifi_ssid_{}", &self.parameters.wifi_ssid)
     }
 
     fn run(&self) -> Result<String, TaskError> {
@@ -1095,12 +1103,14 @@ impl Task for WifiConnect {
         if !self.parameters.wifi_enabled {
             return Ok("".to_string());
         }
-        // following command produces no output (len=0) if default route not present
+
+        // route command produces no output (len=0) if default route not present
         if let Ok(route) = run_cmd("ip route show default", true) {
             if route.len() > 0 {
                 return Ok("".to_string());
             }
         }
+
         let wlan = &self.parameters.net_dev_iso;
         run_shell(
             &format!(
@@ -1114,6 +1124,71 @@ impl Task for WifiConnect {
 
         // pause until network is up
         thread::sleep(time::Duration::from_secs(3));
+        Ok("".to_string())
+    }
+}
+
+pub struct FlatpakPackages;
+
+impl FlatpakPackages {
+    pub fn new() -> FlatpakPackages {
+        FlatpakPackages
+    }
+}
+
+impl Task for FlatpakPackages {
+    fn name(&self) -> String {
+        "install_flatpak_packages".to_string()
+    }
+
+    fn run(&self) -> Result<String, TaskError> {
+        let apps = HashMap::from([
+            ("com.google.Chrome", "chrome"),
+            ("com.visualstudio.code", "code"),
+            ("org.atheme.audacious", "audacious"),
+            ("org.gnome.Evince", "evince"),
+            ("org.telegram.desktop", "telegram"),
+            ("com.github.xournalpp.xournalpp", "xournalpp"),
+            ("org.xfce.ristretto", "ristretto"),
+            ("com.github.PintaProject.Pinta", "pinta"),
+            ("com.transmissionbt.Transmission", "transmission"),
+            ("org.videolan.VLC", "vlc"),
+            ("org.pulseaudio.pavucontrol", "pavucontrol"),
+        ]);
+
+        for (id, name) in apps {
+            println!("\t{name} - {id}");
+
+            // install flatpak package
+            run_cmd(
+                &format!("flatpak install --system --noninteractive --assumeyes flathub {id}"),
+                false,
+            )?;
+
+            // create symlink with short name
+            let ln: &str = &format!("/var/lib/flatpak/exports/bin/{id}");
+            if !Path::new::<str>(ln).exists() {
+                if let Err(e) = std::os::unix::fs::symlink(ln, format!("/usr/local/bin/{name}")) {
+                    return Err(TaskError::new(&e.to_string()));
+                }
+            }
+
+            // adjust package permissions
+            run_cmd(
+                &format!(
+                    "flatpak override {id} \
+                    --device=all \
+                    --filesystem=host \
+                    --share=network \
+                    --share=ipc \
+                    --socket=wayland \
+                    --socket=pulseaudio \
+                    --socket=session-bus"
+                ),
+                false,
+            )?;
+        }
+
         Ok("".to_string())
     }
 }

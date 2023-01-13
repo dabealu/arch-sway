@@ -6,6 +6,7 @@
 [[ $- != *i* ]] && return
 
 alias ls='ls --color=auto'
+alias grep='grep --color'
 
 PATH="$PATH:/home/$USER/bin"
 
@@ -31,14 +32,8 @@ PATH="$PATH:/home/$USER/bin"
 #     done
 # done
 function prompt_command() {
-    if [[ $? -ne 0 ]]; then
-        local CLR_EXIT='\[\e[0;31;1m\]'
-    else
-        local CLR_EXIT='\[\e[0;32;1m\]'
-    fi
-    local CLR_PATH='\[\e[37;1m\]'
-    local CLR_RESET='\[\e[0m\]'
-    PS1="${CLR_PATH}\t \w ${CLR_EXIT}>${CLR_RESET} "
+    [[ $? -ne 0 ]] && local CLR_EXIT='\[\e[0;31;1m\]' || local CLR_EXIT='\[\e[0;32;1m\]'
+    PS1="\[\e[37;1m\]\t \w ${CLR_EXIT}>\[\e[0m\] "
 }
 
 PROMPT_COMMAND="prompt_command"

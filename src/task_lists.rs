@@ -5,6 +5,8 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     // TODO: fix Parameters lifetime, use reference instead clone
     let mut r = TaskRunner::new();
 
+    let username = &parameters.username;
+
     //------------------//
     // Stage 1: chroot  //
     //------------------//
@@ -55,10 +57,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Box::new(User::new(parameters.clone())));
     r.add(Box::new(Grub::new(parameters.clone())));
     r.add(Box::new(Info::new(&format!(
-        "next steps: \
-        \n\treboot, run as a root \
-        \n\t./{}\n",
-        BIN_FILE
+        "next steps: reboot and run ./{BIN_FILE} as a root"
     ))));
     r.add(Box::new(StageCompleted::new(
         "chroot_stage_completed",
@@ -83,17 +82,18 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         "install_sway_packages",
         "pacman -Sy --noconfirm \
             sway swaylock swayidle waybar light xorg-xwayland \
-            bemenu-wayland libnotify dunst wl-clipboard",
+            bemenu-wayland libnotify dunst wl-clipboard alacritty",
         false,
         false,
     )));
+    r.add(Box::new(Info::new("base desktop installed")));
     r.add(Box::new(Command::new(
         "install_fonts_themes_utilities",
         "pacman -Sy --noconfirm \
             grim slurp ddcutil lxappearance \
-            lshw pciutils usbutils \
-            ttf-liberation ttf-roboto ttf-dejavu noto-fonts \
-            noto-fonts-emoji noto-fonts-extra opendesktop-fonts \
+            lshw pciutils usbutils mc \
+            noto-fonts noto-fonts-emoji noto-fonts-extra \
+            ttf-roboto opendesktop-fonts \
             materia-gtk-theme papirus-icon-theme adwaita-qt5",
         false,
         false,
@@ -101,20 +101,10 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Box::new(Variables::new()));
     r.add(Box::new(SwayConfigs::new(parameters.clone())));
     r.add(Box::new(Command::new(
-        "install_desktop_apps",
-        "pacman -Sy --noconfirm \
-            alacritty code telegram-desktop \
-            thunar evince xournalpp ristretto \
-            transmission-gtk audacious vlc",
-        false,
-        false,
-    )));
-    r.add(Box::new(Command::new(
         "install_pipewire",
         "pacman -Sy --noconfirm \
             pipewire pipewire-pulse wireplumber \
-            gst-plugin-pipewire xdg-desktop-portal-wlr \
-            pavucontrol",
+            gst-plugin-pipewire xdg-desktop-portal-wlr",
         false,
         false,
     )));
@@ -127,69 +117,61 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Box::new(CpuGovernor::new()));
     r.add(Box::new(Bluetooth::new()));
     r.add(Box::new(Docker::new(parameters.clone())));
-    r.add(Box::new(Info::new(&format!(
-        "next steps: \
-        \n\treboot and run as a regular user: \
-        \n\t./{}\n",
-        BIN_FILE
-    ))));
-    r.add(Box::new(StageCompleted::new(
-        "install_stage_completed",
-        &format!("/home/{}/", &parameters.username),
-    )));
-
-    //---------------//
-    // Stage 3: user //
-    //---------------//
-    // TODO: lot of bash it this stage
-    r.add(Box::new(Command::new(
-        "chown_moved_files",
-        &format!(
-            "sudo chown -R {}:{} ~/*",
-            parameters.username, parameters.username
-        ),
-        false,
-        true,
-    )));
-    r.add(Box::new(RequireUser::new("nonroot", &parameters.username)));
     r.add(Box::new(Command::new(
         "install_rust_toolchain",
-        "sudo pacman -Sy --noconfirm rustup && \
-        rustup default stable",
+        &format!(
+            "pacman -Sy --noconfirm rustup && \
+            sudo -u {username} -- rustup default stable"
+        ),
         false,
         true,
     )));
     r.add(Box::new(Command::new(
         "install_yay_aur",
-        "mkdir -p ~/projects && cd ~/projects && \
-        git clone https://aur.archlinux.org/yay-git.git && \
-        cd yay-git && \
-        makepkg --noconfirm -si",
+        &format!(
+            "sudo -u {username} -- bash -c 'mkdir -p ~/projects && cd ~/projects && \
+            git clone https://aur.archlinux.org/yay-git.git && \
+            cd yay-git && \
+            makepkg --noconfirm -si'"
+        ),
         false,
         true,
     )));
     r.add(Box::new(Command::new(
         "install_aur_packages",
-        "yes | yay --noconfirm -Sy wdisplays google-chrome libinput-gestures",
+        &format!(
+            "sudo -u {username} -- bash -c 'yes | yay --noconfirm -Sy wdisplays libinput-gestures'"
+        ),
         false,
         true,
     )));
     r.add(Box::new(Command::new(
         "add_user_to_input_group",
-        &format!("sudo usermod -aG input {}", parameters.username),
+        &format!("usermod -aG input {username}"),
         false,
         false,
     )));
     r.add(Box::new(Command::new(
-        "enable_and_start_pipewire",
-        "systemctl --user enable pipewire.service pipewire-pulse.service && \
-        systemctl --user start pipewire.service pipewire-pulse.service",
+        "start_pipewire",
+        &format!(
+            "systemctl --user -M {username}@.host enable pipewire pipewire-pulse && \
+            systemctl --user -M {username}@.host start pipewire pipewire-pulse"
+        ),
         false,
         true,
     )));
     r.add(Box::new(Bashrc::new(parameters)));
-    r.add(Box::new(Info::new("installation finished successfully!")));
-    r.add(Box::new(StageCompleted::new("user_stage_completed", "")));
+    r.add(Box::new(Command::new(
+        "install_flatpak_add_flathub_repo",
+        &format!(
+            "pacman -Sy --noconfirm flatpak && \
+            flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo"
+        ),
+        false,
+        true,
+    )));
+    r.add(Box::new(FlatpakPackages::new()));
+    r.add(Box::new(Info::new("installation finished")));
 
     r
 }
