@@ -202,13 +202,13 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn new(name: &str, command: &str, output: bool, shell: bool) -> Command {
-        Command {
+    pub fn new(name: &str, command: &str, output: bool, shell: bool) -> Box<dyn Task> {
+        Box::new(Command {
             name: name.to_string(),
             command: command.to_string(),
             output: output,
             shell: shell,
-        }
+        })
     }
 }
 
@@ -231,10 +231,10 @@ pub struct Info {
 }
 
 impl Info {
-    pub fn new(msg: &str) -> Info {
-        Info {
+    pub fn new(msg: &str) -> Box<dyn Task> {
+        Box::new(Info {
             message: msg.to_string(),
-        }
+        })
     }
 }
 
@@ -258,11 +258,11 @@ pub struct StageCompleted {
 }
 
 impl StageCompleted {
-    pub fn new(name: &str, move_to: &str) -> StageCompleted {
-        StageCompleted {
+    pub fn new(name: &str, move_to: &str) -> Box<dyn Task> {
+        Box::new(StageCompleted {
             name: name.to_string(),
             move_to: move_to.to_string(),
-        }
+        })
     }
 }
 
@@ -297,8 +297,8 @@ impl Task for StageCompleted {
 pub struct Locales;
 
 impl Locales {
-    pub fn new() -> Locales {
-        Locales {}
+    pub fn new() -> Box<dyn Task> {
+        Box::new(Locales {})
     }
 }
 
@@ -332,10 +332,10 @@ pub struct Hostname {
 }
 
 impl Hostname {
-    pub fn new(parameters: Parameters) -> Hostname {
-        Hostname {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(Hostname {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -367,10 +367,10 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(parameters: Parameters) -> User {
-        User {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(User {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -422,10 +422,10 @@ pub struct Grub {
 }
 
 impl Grub {
-    pub fn new(parameters: Parameters) -> Grub {
-        Grub {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(Grub {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -470,10 +470,10 @@ pub struct FS {
 }
 
 impl FS {
-    pub fn new(parameters: Parameters) -> FS {
-        FS {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(FS {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -510,10 +510,10 @@ pub struct Partitions {
 }
 
 impl Partitions {
-    pub fn new(parameters: Parameters) -> Partitions {
-        Partitions {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(Partitions {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -546,10 +546,10 @@ pub struct Network {
 }
 
 impl Network {
-    pub fn new(parameters: Parameters) -> Network {
-        Network {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(Network {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -581,8 +581,8 @@ impl Task for Network {
 pub struct Resolved;
 
 impl Resolved {
-    pub fn new() -> Resolved {
-        Resolved
+    pub fn new() -> Box<dyn Task> {
+        Box::new(Resolved)
     }
 }
 
@@ -613,10 +613,10 @@ pub struct Netplan {
 }
 
 impl Netplan {
-    pub fn new(parameters: Parameters) -> Netplan {
-        Netplan {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(Netplan {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -662,8 +662,8 @@ impl Task for Netplan {
 pub struct Variables;
 
 impl Variables {
-    pub fn new() -> Variables {
-        Variables
+    pub fn new() -> Box<dyn Task> {
+        Box::new(Variables)
     }
 }
 
@@ -704,10 +704,10 @@ pub struct SwayConfigs {
 }
 
 impl SwayConfigs {
-    pub fn new(parameters: Parameters) -> SwayConfigs {
-        SwayConfigs {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(SwayConfigs {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -765,11 +765,11 @@ pub struct RequireUser {
 }
 
 impl RequireUser {
-    pub fn new(stage: &str, user: &str) -> RequireUser {
-        RequireUser {
+    pub fn new(stage: &str, user: &str) -> Box<dyn Task> {
+        Box::new(RequireUser {
             stage: stage.to_string(),
             user: user.to_string(),
-        }
+        })
     }
 }
 
@@ -803,12 +803,12 @@ pub struct GitRepo {
 }
 
 impl GitRepo {
-    pub fn new(name: &str, url: &str, dest: &str) -> GitRepo {
-        GitRepo {
+    pub fn new(name: &str, url: &str, dest: &str) -> Box<dyn Task> {
+        Box::new(GitRepo {
             name: name.to_string(),
             url: url.to_string(),
             dest: dest.to_string(),
-        }
+        })
     }
 }
 
@@ -825,8 +825,8 @@ impl Task for GitRepo {
 pub struct Swap;
 
 impl Swap {
-    pub fn new() -> Swap {
-        Swap
+    pub fn new() -> Box<dyn Task> {
+        Box::new(Swap)
     }
 }
 
@@ -866,8 +866,8 @@ impl Task for Swap {
 pub struct Hibernation;
 
 impl Hibernation {
-    pub fn new() -> Hibernation {
-        Hibernation
+    pub fn new() -> Box<dyn Task> {
+        Box::new(Hibernation)
     }
 }
 
@@ -937,11 +937,11 @@ pub struct TextFile {
 }
 
 impl TextFile {
-    pub fn new(path: &str, content: &str) -> TextFile {
-        TextFile {
+    pub fn new(path: &str, content: &str) -> Box<dyn Task> {
+        Box::new(TextFile {
             path: path.to_string(),
             content: content.to_string(),
-        }
+        })
     }
 }
 
@@ -958,8 +958,8 @@ impl Task for TextFile {
 pub struct CpuGovernor;
 
 impl CpuGovernor {
-    pub fn new() -> CpuGovernor {
-        CpuGovernor
+    pub fn new() -> Box<dyn Task> {
+        Box::new(CpuGovernor)
     }
 }
 
@@ -992,8 +992,8 @@ impl Task for CpuGovernor {
 pub struct Bluetooth;
 
 impl Bluetooth {
-    pub fn new() -> Bluetooth {
-        Bluetooth
+    pub fn new() -> Box<dyn Task> {
+        Box::new(Bluetooth)
     }
 }
 
@@ -1023,10 +1023,10 @@ pub struct Docker {
 }
 
 impl Docker {
-    pub fn new(parameters: Parameters) -> Docker {
-        Docker {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(Docker {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -1051,10 +1051,10 @@ pub struct Bashrc {
 }
 
 impl Bashrc {
-    pub fn new(parameters: Parameters) -> Bashrc {
-        Bashrc {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(Bashrc {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -1086,10 +1086,10 @@ pub struct WifiConnect {
 }
 
 impl WifiConnect {
-    pub fn new(parameters: Parameters) -> WifiConnect {
-        WifiConnect {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(WifiConnect {
             parameters: parameters,
-        }
+        })
     }
 }
 
@@ -1131,8 +1131,8 @@ impl Task for WifiConnect {
 pub struct FlatpakPackages;
 
 impl FlatpakPackages {
-    pub fn new() -> FlatpakPackages {
-        FlatpakPackages
+    pub fn new() -> Box<dyn Task> {
+        Box::new(FlatpakPackages)
     }
 }
 
