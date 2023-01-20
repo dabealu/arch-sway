@@ -18,11 +18,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         false,
         false,
     ));
-    r.add(GitRepo::new(
-        "arch_sway_repo",
-        "https://github.com/dabealu/arch-sway.git",
-        "arch-sway-repo",
-    ));
+    r.add(GitRepo::new());
     r.add(Partitions::new(parameters.clone()));
     r.add(FS::new(parameters.clone()));
     r.add(Command::new(
@@ -56,10 +52,14 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Hostname::new(parameters.clone()));
     r.add(User::new(parameters.clone()));
     r.add(Grub::new(parameters.clone()));
-    r.add(Info::new(&format!(
-        "next steps: reboot and run ./{BIN_FILE} as a root"
-    )));
-    r.add(StageCompleted::new("chroot_stage_completed", "/mnt/root"));
+    r.add(Info::new(
+        "next steps: reboot and run `arch-sway` as a root",
+    ));
+    r.add(StageCompleted::new(
+        "chroot_stage_completed",
+        "/mnt",
+        "root",
+    ));
 
     //------------------//
     // Stage 2: install //
@@ -126,7 +126,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Command::new(
         "install_yay_aur",
         &format!(
-            "sudo -u {username} -- bash -c 'mkdir -p ~/projects && cd ~/projects && \
+            "sudo -u {username} -- bash -c 'mkdir -p ~/src && cd ~/src && \
             git clone https://aur.archlinux.org/yay-git.git && \
             cd yay-git && \
             makepkg --noconfirm -si'"
@@ -157,7 +157,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         false,
         true,
     ));
-    r.add(Bashrc::new(parameters));
+    r.add(Bashrc::new(parameters.clone()));
     r.add(Command::new(
         "install_flatpak_add_flathub_repo",
         &format!(
@@ -168,7 +168,26 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         true,
     ));
     r.add(FlatpakPackages::new());
-    r.add(Info::new("installation finished"));
+    r.add(Info::new(&format!(
+        "installation finished: reboot and run `sway` as {username}"
+    )));
+    r.add(StageCompleted::new("installation_completed", "", &username));
+
+    r
+}
+
+pub fn sync_list(parameters: Parameters) -> TaskRunner {
+    let mut r = TaskRunner::new();
+
+    r.add(RequireUser::new("config_sync", "root"));
+    r.add(GitRepo::new());
+    r.add(Variables::new());
+    r.add(SwayConfigs::new(parameters.clone()));
+    r.add(Bashrc::new(parameters.clone()));
+    r.add(FlatpakPackages::new());
+    r.add(Info::new(
+        "config sync finished. `Super+Shift+r` to reload desktop",
+    ));
 
     r
 }

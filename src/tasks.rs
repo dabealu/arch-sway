@@ -5,17 +5,33 @@ use std::{error::Error, io::ErrorKind, path::Path};
 use std::{fmt, fs, process, thread, time};
 
 use crate::parameters::Parameters;
-use crate::{base_methods::*, parameters};
+use crate::{base_methods::*, paths};
 
-pub const BIN_FILE: &str = "arch-sway";
-pub const REPO_PATH: &str = "arch-sway-repo";
-pub const PROGRESS_FILE: &str = "arch-sway-progress";
+pub fn save_progress(dest: &str, task: &str) -> Result<(), TaskError> {
+    let dest = if dest.is_empty() {
+        paths::progress_file("", "")
+    } else {
+        dest.to_string()
+    };
 
-pub fn save_progress(dir: &str, task: &str) -> Result<(), TaskError> {
-    let mut dest = PROGRESS_FILE.to_string();
-    if !dir.is_empty() {
-        if let Some(s) = Path::new(dir).join(PROGRESS_FILE).to_str() {
-            dest = s.to_string();
+    let dest_path = Path::new::<String>(&dest);
+    if !dest_path.exists() {
+        let path_err = Err(TaskError::new("failed to get progress file directory path"));
+
+        match dest_path.parent() {
+            Some(dir_path) => match dir_path.to_str() {
+                Some(path_str) => {
+                    if let Err(e) = std::fs::create_dir_all(path_str) {
+                        return Err(TaskError::new(&format!("failed to create directory {e}")));
+                    }
+                }
+                None => {
+                    return path_err;
+                }
+            },
+            None => {
+                return path_err;
+            }
         }
     }
 
@@ -26,7 +42,7 @@ pub fn save_progress(dir: &str, task: &str) -> Result<(), TaskError> {
 }
 
 pub fn load_progress() -> Result<String, TaskError> {
-    match fs::read_to_string(PROGRESS_FILE) {
+    match fs::read_to_string(paths::progress_file("", "")) {
         Ok(s) => Ok(s.trim().to_string()),
         Err(e) => {
             match e.kind() {
@@ -39,7 +55,7 @@ pub fn load_progress() -> Result<String, TaskError> {
 }
 
 pub fn clear_progress() -> Result<(), TaskError> {
-    if let Err(e) = fs::remove_file(PROGRESS_FILE) {
+    if let Err(e) = fs::remove_file(paths::progress_file("", "")) {
         return Err(TaskError::new(&e.to_string()));
     }
     Ok(())
@@ -126,13 +142,13 @@ impl TaskRunner {
             let run_result = t.run();
 
             match t.signal() {
-                TaskSignal::StageCompleted(move_to) => {
+                TaskSignal::StageCompleted(progress_file_moved_to) => {
                     // run() moves files to new dir if specified
                     if let Err(e) = run_result {
                         println!("\x1b[91m\x1b[1m▒▒ error:\x1b[0m {e}");
                         process::exit(1);
                     }
-                    if let Err(e) = save_progress(&move_to, &task_name) {
+                    if let Err(e) = save_progress(&progress_file_moved_to, &task_name) {
                         println!("\x1b[93m\x1b[1m▒▒ warning: failed to save status: \x1b[0m{e}")
                     }
                     process::exit(0);
@@ -142,6 +158,17 @@ impl TaskRunner {
                     Ok(output) => {
                         println!("{}", output.trim());
                         continue;
+                    }
+                    Err(e) => {
+                        println!("\x1b[91m\x1b[1m▒▒ error:\x1b[0m {e}");
+                        process::exit(1);
+                    }
+                },
+
+                // checking required user task shouldn't be saved to progress
+                TaskSignal::RequireUser => match run_result {
+                    Ok(_) => {
+                        println!("\x1b[92m\x1b[1m▒▒ ok\x1b[0m");
                     }
                     Err(e) => {
                         println!("\x1b[91m\x1b[1m▒▒ error:\x1b[0m {e}");
@@ -191,6 +218,7 @@ pub trait Task {
 pub enum TaskSignal {
     Default,
     Info,
+    RequireUser,
     StageCompleted(String),
 }
 
@@ -206,7 +234,7 @@ impl Command {
         Box::new(Command {
             name: name.to_string(),
             command: command.to_string(),
-            output: output,
+            output: output, // TODO: remove this flag completely? is it even used anywhere or always `false`?
             shell: shell,
         })
     }
@@ -254,14 +282,16 @@ impl Task for Info {
 
 pub struct StageCompleted {
     name: String,
-    move_to: String,
+    chroot: String,
+    user: String,
 }
 
 impl StageCompleted {
-    pub fn new(name: &str, move_to: &str) -> Box<dyn Task> {
+    pub fn new(name: &str, chroot: &str, user: &str) -> Box<dyn Task> {
         Box::new(StageCompleted {
             name: name.to_string(),
-            move_to: move_to.to_string(),
+            chroot: chroot.to_string(),
+            user: user.to_string(),
         })
     }
 }
@@ -272,24 +302,43 @@ impl Task for StageCompleted {
     }
 
     fn signal(&self) -> TaskSignal {
-        TaskSignal::StageCompleted(self.move_to.to_string())
+        let progress_file_moved_to = paths::progress_file(&self.chroot, &self.user);
+        TaskSignal::StageCompleted(progress_file_moved_to)
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        if !self.move_to.is_empty() {
-            // TODO: get rid of bash for move
+        let bin_file = match std::env::current_exe() {
+            Ok(exe_path) => exe_path.display().to_string(),
+            Err(_) => paths::bin_file(""),
+        };
+
+        let src_dir = &paths::src_dir("", "");
+        let conf_dir = &paths::conf_dir("", "");
+        let src_dir_dest = &paths::src_dir(&self.chroot, &self.user);
+        let conf_dir_dest = &paths::conf_dir(&self.chroot, &self.user);
+
+        // TODO: get rid of bash
+        if !self.chroot.is_empty() {
             run_cmd(
-                &format!(
-                    "mv {} {} {} {} {}",
-                    BIN_FILE,
-                    PROGRESS_FILE,
-                    REPO_PATH,
-                    parameters::PARAMETERS_FILE,
-                    self.move_to
-                ),
+                &format!("mv {} {}", bin_file, paths::bin_file(&self.chroot)),
                 false,
             )?;
         }
+        run_cmd(&format!("mv {} {}", src_dir, src_dir_dest,), false)?;
+        run_cmd(&format!("mv {} {}", conf_dir, conf_dir_dest,), false)?;
+
+        if !self.user.is_empty() {
+            run_shell(
+                &format!(
+                    "chown -R {}:{} {src_dir_dest} {conf_dir_dest}",
+                    self.user, self.user
+                ),
+                false,
+            )?;
+            symlink(conf_dir_dest, conf_dir)?;
+            symlink(src_dir_dest, src_dir)?;
+        }
+
         Ok("".to_string())
     }
 }
@@ -377,6 +426,10 @@ impl User {
 impl Task for User {
     fn name(&self) -> String {
         "create_user".to_string()
+    }
+
+    fn signal(&self) -> TaskSignal {
+        TaskSignal::RequireUser
     }
 
     fn run(&self) -> Result<String, TaskError> {
@@ -599,7 +652,7 @@ impl Task for Resolved {
         }
 
         copy_file(
-            &format!("{REPO_PATH}/assets/files/dns_servers.conf"),
+            &format!("{}/assets/files/dns_servers.conf", paths::repo_dir("", "")),
             "/etc/systemd/resolved.conf.d/dns_servers.conf",
         )?;
 
@@ -632,7 +685,10 @@ impl Task for Netplan {
 
         if self.parameters.wifi_enabled {
             // TODO: use proper templating
-            match fs::read_to_string(format!("{REPO_PATH}/assets/files/netplan-wifi-config.yaml")) {
+            match fs::read_to_string(format!(
+                "{}/assets/files/netplan-wifi-config.yaml",
+                paths::repo_dir("", "")
+            )) {
                 Ok(template) => {
                     let content = template
                         .replace("_NETWORK_INTERFACE_", &self.parameters.net_dev)
@@ -643,7 +699,10 @@ impl Task for Netplan {
                 Err(e) => return Err(TaskError::new(&e.to_string())),
             }
         } else {
-            match fs::read_to_string(format!("{REPO_PATH}/assets/files/netplan-eth-config.yaml")) {
+            match fs::read_to_string(format!(
+                "{}/assets/files/netplan-eth-config.yaml",
+                paths::repo_dir("", "")
+            )) {
                 Ok(template) => {
                     let content = template.replace("_NETWORK_INTERFACE_", &self.parameters.net_dev);
                     text_file("/etc/netplan/eth-config.yaml", &content)?;
@@ -723,7 +782,7 @@ impl Task for SwayConfigs {
             return Err(TaskError::new(&format!("failed to create directory {e}")));
         }
 
-        match fs::read_dir(format!("{REPO_PATH}/assets/conf")) {
+        match fs::read_dir(format!("{}/assets/conf", paths::repo_dir("", ""))) {
             Ok(read_dir) => {
                 for read_dir_res in read_dir.into_iter() {
                     match read_dir_res {
@@ -736,7 +795,7 @@ impl Task for SwayConfigs {
                             };
 
                             copy_file(
-                                &format!("{REPO_PATH}/assets/conf/{conf_filename}"),
+                                &format!("{}/assets/conf/{conf_filename}", paths::repo_dir("", "")),
                                 &format!("/home/{username}/.config/sway/{conf_filename}"),
                             )?;
                         }
@@ -785,8 +844,8 @@ impl Task for RequireUser {
                 let current_user = current_user.trim();
                 if current_user != self.user {
                     return Err(TaskError::new(&format!(
-                        "current user: {}, required user: {}",
-                        current_user, self.user
+                        "required user: {}, current user: {}",
+                        self.user, current_user
                     )));
                 } else {
                     return Ok("".to_string());
@@ -796,29 +855,32 @@ impl Task for RequireUser {
     }
 }
 
-pub struct GitRepo {
-    name: String,
-    dest: String,
-    url: String,
-}
+pub struct GitRepo;
 
 impl GitRepo {
-    pub fn new(name: &str, url: &str, dest: &str) -> Box<dyn Task> {
-        Box::new(GitRepo {
-            name: name.to_string(),
-            url: url.to_string(),
-            dest: dest.to_string(),
-        })
+    pub fn new() -> Box<dyn Task> {
+        Box::new(GitRepo {})
     }
 }
 
 impl Task for GitRepo {
     fn name(&self) -> String {
-        format!("clone_git_repo_{}", self.name)
+        "arch_sway_git_repo".to_string()
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        run_shell(&format!("git clone {} {}", self.url, self.dest), false)
+        let dest = paths::repo_dir("", "");
+
+        if Path::new::<String>(&dest).exists() {
+            return Ok(format!(
+                "using local repo {dest}, note that it may have discrepancies with the remote"
+            ));
+        }
+
+        run_cmd(
+            &format!("git clone https://github.com/dabealu/arch-sway.git {dest}"),
+            false,
+        )
     }
 }
 
@@ -1069,11 +1131,11 @@ impl Task for Bashrc {
         }
 
         copy_file(
-            &format!("{REPO_PATH}/assets/files/bashrc"),
+            &format!("{}/assets/files/bashrc", paths::repo_dir("", "")),
             &format!("/home/{}/.bashrc", self.parameters.username),
         )?;
         copy_file(
-            &format!("{REPO_PATH}/assets/files/brightness.sh"),
+            &format!("{}/assets/files/brightness.sh", paths::repo_dir("", "")),
             &format!("/home/{}/bin/brightness.sh", self.parameters.username),
         )?;
 
@@ -1166,12 +1228,10 @@ impl Task for FlatpakPackages {
             )?;
 
             // create symlink with short name
-            let ln: &str = &format!("/var/lib/flatpak/exports/bin/{id}");
-            if !Path::new::<str>(ln).exists() {
-                if let Err(e) = std::os::unix::fs::symlink(ln, format!("/usr/local/bin/{name}")) {
-                    return Err(TaskError::new(&e.to_string()));
-                }
-            }
+            symlink(
+                &format!("/var/lib/flatpak/exports/bin/{id}"),
+                &format!("/usr/local/bin/{name}"),
+            )?;
 
             // adjust package permissions
             run_cmd(

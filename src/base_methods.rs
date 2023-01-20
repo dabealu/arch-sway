@@ -127,3 +127,14 @@ pub fn copy_file(from: &str, to: &str) -> Result<String, TaskError> {
     }
     Ok("".to_string())
 }
+
+pub fn symlink(origin: &str, link: &str) -> Result<String, TaskError> {
+    if !Path::new::<str>(link).exists() {
+        if let Err(e) = std::os::unix::fs::symlink(origin, link) {
+            return Err(TaskError::new(&format!(
+                "failed to create symlink from `{origin}` to `{link}`: {e}"
+            )));
+        }
+    }
+    Ok("".to_string())
+}

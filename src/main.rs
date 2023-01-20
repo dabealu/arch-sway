@@ -1,5 +1,6 @@
 mod base_methods;
 mod parameters;
+mod paths;
 mod task_lists;
 mod tasks;
 
@@ -7,11 +8,12 @@ use std::env;
 use task_lists::*;
 
 const HELP_MESSAGE: &str = "available flags:
-* list             - print tasks list without execution
-* install          - run tasks to install the system
-* sync             - use git source to sync configs 
-* start-from       - start installation from specific task
-* clear-progress   - remove file with saved progress";
+* list            - print tasks list without execution
+* install         - run tasks to install the system
+* sync            - use git repo to sync configs 
+* start-from      - start installation from specific task
+* clear-progress  - remove file with saved progress
+* update-bin      - compile new bin from newest source";
 
 fn main() {
     let mut args = env::args();
@@ -20,9 +22,7 @@ fn main() {
         Some(flag) => match flag.as_ref() {
             "list" => installation_list(parameters::Parameters::dummy()).list(),
             "install" => installation_list(parameters::Parameters::build()).run(),
-            "sync" => {
-                // TODO: re-sync config files from git on installed system
-            }
+            "sync" => sync_list(parameters::Parameters::build()).run(),
             "start-from" => {
                 if let Some(task_id) = args.next() {
                     installation_list(parameters::Parameters::build()).run_from(&task_id);
@@ -34,6 +34,9 @@ fn main() {
                 if let Err(e) = tasks::clear_progress() {
                     println!("failed to clear current progress: {e}");
                 }
+            }
+            "update-bin" => {
+                // TODO: compine bin from src and move it to path replacing old one
             }
             _ => {
                 println!("unknown flag '{flag}', {HELP_MESSAGE}")

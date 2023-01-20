@@ -8,7 +8,7 @@ mkdir archiso
 cd archiso/
 
 cp -r /usr/share/archiso/configs/releng .
-cp ../target/release/arch-sway releng/airootfs/root/
+cp ../target/release/arch-sway releng/airootfs/usr/local/bin/
 
 sed -i 's#file_permissions=(#file_permissions=(\n  ["/root/arch-sway"]="0:0:755"#' releng/profiledef.sh
 
