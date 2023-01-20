@@ -1,6 +1,5 @@
-arch-sway-*
 target/
 archiso/
-archlinux-iso/
+iso-builds/
 # temp:
 NOTES.md
