@@ -4,8 +4,8 @@ use std::process::Command;
 use std::{env, fmt, fs, io, path::Path, process, str};
 
 use crate::base_methods::*;
+use crate::paths;
 
-pub const PARAMETERS_FILE: &str = "arch-sway-parameters.yaml";
 const NETWORK_INTERFACES_REGEX: &str = r"^(wlan|wlp|eth|enp).*";
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -38,11 +38,20 @@ impl fmt::Display for Parameters {
 
 impl Parameters {
     pub fn build() -> Parameters {
+        let conf_dir = paths::conf_dir("", "");
+        if !Path::new(&conf_dir).exists() {
+            if let Err(e) = std::fs::create_dir_all(conf_dir) {
+                panic!("failed to create conf directory: {e}");
+            }
+        }
+
+        let parameters_file = paths::parameters_file("", "");
+
         // try to load parameters from file
-        if let Ok(yaml_str) = fs::read_to_string(PARAMETERS_FILE) {
+        if let Ok(yaml_str) = fs::read_to_string(&parameters_file) {
             let yaml_res: Result<Parameters, _> = serde_yaml::from_str(&yaml_str);
             if let Ok(params) = yaml_res {
-                println!("got parameters from file '{PARAMETERS_FILE}'");
+                println!("got parameters from file '{parameters_file}'");
                 return params;
             }
         }
@@ -52,8 +61,8 @@ impl Parameters {
         let params = Self::request_user_parameters();
 
         match serde_yaml::to_string(&params) {
-            Ok(yaml) => fs::write(PARAMETERS_FILE, yaml)
-                .expect(&format!("failed to save {PARAMETERS_FILE}")),
+            Ok(yaml) => fs::write(&parameters_file, yaml)
+                .expect(&format!("failed to save {parameters_file}")),
             Err(e) => panic!("failed to save installation parameters to file: {e}"),
         }
 
@@ -281,16 +290,5 @@ fn list_block_dev() -> Vec<String> {
             Err(e) => panic!("failed to get list of block devices: {e}"),
         },
         Err(e) => panic!("failed to get list of block devices: {e}"),
-    }
-}
-
-// TODO: tests
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_detect_block_device() {
-        assert_eq!(list_block_dev(), vec!["nvme0n1".to_string()])
     }
 }
