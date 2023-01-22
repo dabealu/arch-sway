@@ -1,22 +1,12 @@
 # QEMU
-
 ## installation
-docs: https://wiki.archlinux.org/title/QEMU
-
 ```s
-sudo pacman -Sy qemu-full virt-manager dmidecode
-
-systemctl enable libvirtd
-systemctl start libvirtd
-
+sudo pacman -Sy qemu-base virt-manager dmidecode
 sudo usermod -a -G libvirt user
 ```
 GUI: `virt-manager`
 
 ## network bridge
-docs: https://wiki.archlinux.org/title/Systemd-networkd#Bridge_interface
-      https://www.freedesktop.org/software/systemd/man/systemd.network.html
-
 `/etc/systemd/network/qemu0.netdev`
 ```ini
 [NetDev]
@@ -57,5 +47,11 @@ allow qemu0
 ```
 
 ```s
+systemctl enable libvirtd
 systemctl restart systemd-networkd libvirtd
 ```
+
+## docs
+qemu:    https://wiki.archlinux.org/title/QEMU
+network: https://wiki.archlinux.org/title/Systemd-networkd#Bridge_interface
+         https://www.freedesktop.org/software/systemd/man/systemd.network.html

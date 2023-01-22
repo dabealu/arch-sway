@@ -22,6 +22,12 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Partitions::new(parameters.clone()));
     r.add(FS::new(parameters.clone()));
     r.add(Command::new(
+        "update_archlinux_keyring",
+        "pacman -Sy --noconfirm archlinux-keyring",
+        false,
+        false,
+    ));
+    r.add(Command::new(
         "pacstrap_packages",
         "pacstrap /mnt \
             linux linux-firmware base base-devel \
@@ -53,9 +59,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Hostname::new(parameters.clone()));
     r.add(User::new(parameters.clone()));
     r.add(Grub::new(parameters.clone()));
-    r.add(Info::new(
-        "next steps: reboot and run `arch-sway` as a root",
-    ));
+    r.add(Info::new("reboot and continue installation as root"));
     r.add(StageCompleted::new(
         "chroot_stage_completed",
         "/mnt",
