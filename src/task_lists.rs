@@ -23,7 +23,8 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(FS::new(parameters.clone()));
     r.add(Command::new(
         "pacstrap_packages",
-        "pacstrap /mnt base base-devel linux linux-firmware \
+        "pacstrap /mnt \
+            linux linux-firmware base base-devel \
             grub efibootmgr dosfstools os-prober mtools \
             systemd-resolvconf wpa_supplicant netplan \
             openssh dnsutils curl git unzip vim sudo man tmux \
@@ -85,12 +86,11 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     ));
     r.add(Info::new("base desktop installed"));
     r.add(Command::new(
-        "install_fonts_themes_utilities",
+        "install_utilities_fonts_themes",
         "pacman -Sy --noconfirm \
             grim slurp ddcutil lxappearance \
-            lshw pciutils usbutils mc \
-            noto-fonts noto-fonts-emoji noto-fonts-extra \
-            ttf-roboto opendesktop-fonts \
+            lshw pciutils usbutils \
+            noto-fonts noto-fonts-cjk noto-fonts-emoji \
             materia-gtk-theme papirus-icon-theme adwaita-qt5",
         false,
         false,
@@ -137,7 +137,10 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     r.add(Command::new(
         "install_aur_packages",
         &format!(
-            "sudo -u {username} -- bash -c 'yes | yay --noconfirm -Sy wdisplays libinput-gestures'"
+            "sudo -u {username} -- bash -c 'yes | yay --noconfirm -Sy \
+                google-chrome \
+                wdisplays \
+                libinput-gestures'"
         ),
         false,
         true,
@@ -159,18 +162,22 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
     ));
     r.add(Bashrc::new(parameters.clone()));
     r.add(Command::new(
-        "install_flatpak_add_flathub_repo",
-        &format!(
-            "pacman -Sy --noconfirm flatpak && \
-            flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo"
-        ),
+        "install_desktop_apps",
+        "sudo pacman -Sy --noconfirm \
+            code \
+            evince \
+            xournalpp \
+            telegram-desktop \
+            ristretto \
+            drawing \
+            transmission-gtk \
+            vlc \
+            pavucontrol \
+            thunar",
         false,
-        true,
+        false,
     ));
-    r.add(FlatpakPackages::new());
-    r.add(Info::new(&format!(
-        "installation finished: reboot and run `sway` as {username}"
-    )));
+    r.add(Info::new("installation finished: reboot and run `sway`"));
     r.add(StageCompleted::new("installation_completed", "", &username));
 
     r
@@ -184,7 +191,6 @@ pub fn sync_list(parameters: Parameters) -> TaskRunner {
     r.add(Variables::new());
     r.add(SwayConfigs::new(parameters.clone()));
     r.add(Bashrc::new(parameters.clone()));
-    r.add(FlatpakPackages::new());
     r.add(Info::new(
         "config sync finished. `Super+Shift+r` to reload desktop",
     ));

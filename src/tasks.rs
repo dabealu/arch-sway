@@ -1190,9 +1190,16 @@ impl Task for WifiConnect {
     }
 }
 
+// flatpak as an alternative to native packages.
+// requires flatpak package and remote to be added:
+//      pacman -Sy --noconfirm flatpak && \
+//      flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo"
+// themes in flatpak apps, doesn't work very well at the moment:
+// https://docs.flatpak.org/en/latest/desktop-integration.html#installing-themes
 pub struct FlatpakPackages;
 
 impl FlatpakPackages {
+    #[allow(dead_code)]
     pub fn new() -> Box<dyn Task> {
         Box::new(FlatpakPackages)
     }

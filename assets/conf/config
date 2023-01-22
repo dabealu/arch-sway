@@ -3,7 +3,6 @@
 # Read `man 5 sway` for a complete reference.
 
 ### Appearance and fonts
-#set $font       "pango:Roboto"
 set $font       "pango:Noto Sans"
 set $font-size  12
 
