@@ -1259,3 +1259,72 @@ impl Task for FlatpakPackages {
         Ok("".to_string())
     }
 }
+
+pub fn create_iso() -> Result<(), TaskError> {
+    let releng_dir = "/usr/share/archiso/configs/releng";
+    let repo_dir = paths::repo_dir("", "");
+    let bin_path = join_paths(&repo_dir, "target/release/arch-sway");
+    let archiso_dir = join_paths(&repo_dir, "archiso");
+    let iso_builds_dir = join_paths(&repo_dir, "iso-builds");
+    let releng_copy_dir = join_paths(&archiso_dir, "releng");
+    let releng_bin_path = join_paths(&releng_copy_dir, "airootfs/usr/local/bin/arch-sway");
+    let profiledef_path = join_paths(&releng_copy_dir, "profiledef.sh");
+
+    println!("building a binary");
+    build_bin()?;
+
+    run_cmd(&format!("sudo rm -rf {archiso_dir}"), false)?;
+
+    if let Err(e) = std::fs::create_dir_all(&archiso_dir) {
+        return Err(TaskError::new(&format!("failed to create directory {e}")));
+    }
+
+    // TODO: implement copy_dir
+    run_shell(&format!("cp -r {releng_dir} {archiso_dir}"), false)?;
+    copy_file(&bin_path, &releng_bin_path)?;
+
+    replace_line(
+        &profiledef_path,
+        r##"file_permissions=\("##,
+        &format!("file_permissions=(\n  [\"/usr/local/bin/arch-sway\"]=\"0:0:755\""),
+    )?;
+
+    println!("building iso, it make take a while...");
+    run_shell(
+        // mkarchiso must be run as root
+        &format!(
+            "cd {archiso_dir} && sudo mkarchiso -v -w . -o {iso_builds_dir} {releng_copy_dir}"
+        ),
+        false,
+    )?;
+
+    println!("{}", run_cmd("lsblk", true)?);
+    println!("done, to create installation media run:\nsudo cp {iso_builds_dir}/archlinux-YYYY.MM.DD-x86_64.iso /dev/sdX");
+
+    Ok(())
+}
+
+pub fn update_bin() -> Result<(), TaskError> {
+    build_bin()?;
+
+    let bin_src = join_paths(&paths::repo_dir("", ""), "target/release/arch-sway");
+    let bin_dest = paths::bin_file("");
+    run_cmd(&format!("sudo cp -f {bin_src} {bin_dest}"), false)?;
+
+    println!("done. bin path: {bin_dest}");
+    Ok(())
+}
+
+fn build_bin() -> Result<(), TaskError> {
+    run_shell(
+        &format!(
+            "cd {} && \
+            cargo fmt && \
+            cargo test && \
+            cargo build -r",
+            paths::repo_dir("", "")
+        ),
+        false,
+    )?;
+    Ok(())
+}

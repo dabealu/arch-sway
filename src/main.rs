@@ -13,7 +13,8 @@ const HELP_MESSAGE: &str = "available flags:
 * sync            - use git repo to sync configs 
 * start-from      - start installation from specific task
 * clear-progress  - remove file with saved progress
-* update-bin      - compile new bin from newest source";
+* update-bin      - compile new bin from local repo
+* build-iso       - create iso with arch-sway bin included";
 
 fn main() {
     let mut args = env::args();
@@ -36,7 +37,14 @@ fn main() {
                 }
             }
             "update-bin" => {
-                // TODO: compine bin from src and move it to path replacing old one
+                if let Err(e) = tasks::update_bin() {
+                    println!("failed to build new binary: {e}");
+                }
+            }
+            "build-iso" => {
+                if let Err(e) = tasks::create_iso() {
+                    println!("failed to create iso: {e}");
+                }
             }
             _ => {
                 println!("unknown flag '{flag}', {HELP_MESSAGE}")

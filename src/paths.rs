@@ -1,5 +1,7 @@
 use std::env;
 
+use crate::base_methods::join_paths;
+
 // paths:
 //    chroot      /mnt
 //    bin         /usr/local/bin/arch-sway
@@ -19,7 +21,7 @@ const PARAMETERS_FILE: &str = "/parameters.yaml";
 
 fn prefix_chroot(chroot: &str, path: &str) -> String {
     if !chroot.is_empty() {
-        return chroot.trim_end_matches("/").to_string() + "/" + &path.trim_start_matches("/");
+        return join_paths(chroot, path);
     }
     return path.to_string();
 }
@@ -40,7 +42,7 @@ fn prefix_home(user: &str, path: &str) -> String {
         format!("/home/{user}/")
     };
 
-    return prefix + &path.trim_start_matches("/");
+    return join_paths(&prefix, &path);
 }
 
 pub fn bin_file(chroot: &str) -> String {

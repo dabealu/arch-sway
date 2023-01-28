@@ -51,7 +51,9 @@ pub fn replace_line(path: &str, regex: &str, replace: &str) -> Result<String, Ta
 
     match fs::write(path, result_lines.join("\n")) {
         Ok(_) => Ok("".to_string()),
-        Err(e) => Err(TaskError::new(&e.to_string())),
+        Err(e) => Err(TaskError::new(&format!(
+            "failed to replace line in `{path}`: {e}"
+        ))),
     }
 }
 
@@ -88,7 +90,7 @@ pub fn run_cmd(cmd: &str, output: bool) -> Result<String, TaskError> {
                 )));
             }
         }
-        Err(e) => Err(TaskError::new(&format!("failed to run \"{}\": {e}", cmd))),
+        Err(e) => Err(TaskError::new(&format!("failed to run `{cmd}`: {e}"))),
     }
 }
 
@@ -114,16 +116,15 @@ pub fn run_shell(script: &str, output: bool) -> Result<String, TaskError> {
                 )));
             }
         }
-        Err(e) => Err(TaskError::new(&format!(
-            "failed to run \"{}\": {e}",
-            script
-        ))),
+        Err(e) => Err(TaskError::new(&format!("failed to run `{script}`: {e}"))),
     }
 }
 
 pub fn copy_file(from: &str, to: &str) -> Result<String, TaskError> {
     if let Err(e) = fs::copy(from, to) {
-        return Err(TaskError::new(&e.to_string()));
+        return Err(TaskError::new(&format!(
+            "failed to copy `{from}` to `{to}`: {e}"
+        )));
     }
     Ok("".to_string())
 }
@@ -137,4 +138,8 @@ pub fn symlink(origin: &str, link: &str) -> Result<String, TaskError> {
         }
     }
     Ok("".to_string())
+}
+
+pub fn join_paths(a: &str, b: &str) -> String {
+    a.trim_end_matches("/").to_string() + "/" + &b.trim_start_matches("/")
 }

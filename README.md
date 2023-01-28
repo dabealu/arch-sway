@@ -27,8 +27,8 @@ dhcpcd
 
 ### archiso
 to crete iso with `arch-sway` binary included:
-- install package `pacman -Sy archiso`
-- run `create-iso.sh`
+- install dependency `pacman -Sy archiso`
+- run `arch-sway build-iso`
 archiso doc - https://wiki.archlinux.org/title/archiso
 
 ### running on VM
