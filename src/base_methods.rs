@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::{fs, io::Write, path::Path, process};
+use std::{env, fs, io, io::Write, path::Path, process};
 
 use crate::tasks::TaskError;
 
@@ -142,4 +142,45 @@ pub fn symlink(origin: &str, link: &str) -> Result<String, TaskError> {
 
 pub fn join_paths(a: &str, b: &str) -> String {
     a.trim_end_matches("/").to_string() + "/" + &b.trim_start_matches("/")
+}
+
+fn read_user_input() -> String {
+    let mut input = String::new();
+    let stdin = io::stdin();
+    match stdin.read_line(&mut input) {
+        Ok(_) => return input.trim().to_owned(),
+        Err(e) => panic!("failed to read user's input: {e}"),
+    }
+}
+
+pub fn ask_user_input(msg: &str) -> String {
+    println!("{msg} ");
+    return read_user_input();
+}
+
+pub fn env_or_input(var: &str, msg: &str) -> String {
+    println!("{msg} ");
+    let var_res = env::var(var);
+    if var_res.is_ok() {
+        println!("using value from '{var}' variable");
+        var_res.unwrap()
+    } else {
+        read_user_input()
+    }
+}
+
+pub fn ask_confirmation(msg: &str) {
+    loop {
+        let proceed = ask_user_input(&format!("{msg} [yn]"));
+        match proceed.to_lowercase().as_str() {
+            "y" => break,
+            "n" => {
+                println!("exiting...");
+                process::exit(0);
+            }
+            _ => {
+                println!("unknown input '{proceed}', please enter y or n");
+            }
+        }
+    }
 }

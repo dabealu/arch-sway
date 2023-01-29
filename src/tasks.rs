@@ -234,7 +234,7 @@ impl Command {
         Box::new(Command {
             name: name.to_string(),
             command: command.to_string(),
-            output: output, // TODO: remove this flag completely? is it even used anywhere or always `false`?
+            output: output,
             shell: shell,
         })
     }
@@ -1326,5 +1326,88 @@ fn build_bin() -> Result<(), TaskError> {
         ),
         false,
     )?;
+    Ok(())
+}
+
+pub fn format_device(dev_path: &str, iso_path: &str) -> Result<(), TaskError> {
+    // doc: https://wiki.archlinux.org/title/USB_flash_installation_medium#In_GNU/Linux_2
+    // current implementation is for efi-gpt only.
+    // boot partition must have proper filesystem label.
+    // parse label from path to iso file, format ARCH_YYYYMM, e.g. ARCH_202210
+    // path and iso name example: /home/user/Downloads/archlinux-2022.10.01-x86_64.iso
+    let parse_err =
+        "unable to parse date from iso file name, expected format: archlinux-2022.10.01-x86_64.iso";
+    let date_vec = Path::new(iso_path)
+        .file_name()
+        .expect("unable to get file name from iso path")
+        .to_str()
+        .expect("unable to parse filepath into str")
+        .split("-")
+        .collect::<Vec<&str>>() // -> [archlinux, 2022.10.01, x86_64.iso]
+        .get(1)
+        .expect(parse_err)
+        .split(".")
+        .collect::<Vec<&str>>(); // -> [2022, 10, 01]
+    let iso_label = format!(
+        "ARCH_{}{}",
+        date_vec.get(0).expect(parse_err),
+        date_vec.get(1).expect(parse_err),
+    );
+
+    ask_confirmation(&format!(
+        "warning: this will wipe data from {dev_path}, continue?"
+    ));
+
+    // create partition and fs for iso
+    println!("creating partitions");
+    let parted = format!("sudo parted -s {dev_path}");
+    run_cmd(&format!("{parted} mklabel gpt"), false)?;
+    run_cmd(
+        &format!("{parted} mkpart Arch_ISO fat32 1MiB 1024MiB"),
+        false,
+    )?;
+
+    run_cmd(&format!("sudo mkfs.fat -F 32 {dev_path}1"), false)?;
+    run_cmd(&format!("sudo fatlabel {dev_path}1 {iso_label}"), false)?;
+
+    // mount fs located in the storage device and extract the contents of the iso image to it
+    println!("copying iso to {dev_path}1");
+    let mnt_dir = join_paths(&paths::repo_dir("", ""), "iso-device-mnt");
+    if let Err(e) = std::fs::create_dir_all(&mnt_dir) {
+        println!("failed to create directory {mnt_dir}: {e}");
+        process::exit(1);
+    }
+    run_cmd(&format!("sudo mount {dev_path}1 {mnt_dir}"), false)?;
+    run_cmd(&format!("sudo bsdtar -x -f {iso_path} -C {mnt_dir}"), false)?;
+
+    // unmount fs, install the syslinux and mtools packages and make the partition bootable
+    run_cmd(&format!("sudo umount {mnt_dir}"), false)?;
+    run_cmd(
+        &format!("sudo syslinux --directory syslinux --install {dev_path}1"),
+        false,
+    )?;
+    run_cmd(
+        &format!(
+            "sudo dd bs=440 count=1 conv=notrunc \
+            if=/usr/lib/syslinux/bios/gptmbr.bin \
+            of={dev_path}"
+        ),
+        false,
+    )?;
+
+    // allocate rest of the space to storage partition
+    run_cmd(
+        &format!("{parted} mkpart FlashDrive ext4 1024MiB 100%"),
+        false,
+    )?;
+    run_cmd(&format!("sudo mkfs.ext4 {dev_path}2"), false)?;
+
+    // rm temporary mount dir
+    if let Err(e) = fs::remove_dir_all(&mnt_dir) {
+        println!("failed to remove directory {mnt_dir}: {e}");
+        process::exit(1);
+    }
+    println!("done");
+
     Ok(())
 }

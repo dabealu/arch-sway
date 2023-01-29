@@ -93,7 +93,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         "install_utilities_fonts_themes",
         "pacman -Sy --noconfirm \
             grim slurp ddcutil lxappearance \
-            lshw pciutils usbutils \
+            syslinux lshw pciutils usbutils \
             noto-fonts noto-fonts-cjk noto-fonts-emoji \
             materia-gtk-theme papirus-icon-theme adwaita-qt5",
         false,

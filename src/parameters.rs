@@ -1,10 +1,10 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use std::{env, fmt, fs, io, path::Path, process, str};
+use std::{fmt, fs, io, path::Path, str};
 
 use crate::base_methods::*;
-use crate::paths;
+use crate::paths::*;
 
 const NETWORK_INTERFACES_REGEX: &str = r"^(wlan|wlp|eth|enp).*";
 
@@ -38,14 +38,14 @@ impl fmt::Display for Parameters {
 
 impl Parameters {
     pub fn build() -> Parameters {
-        let conf_dir = paths::conf_dir("", "");
+        let conf_dir = conf_dir("", "");
         if !Path::new(&conf_dir).exists() {
             if let Err(e) = std::fs::create_dir_all(conf_dir) {
                 panic!("failed to create conf directory: {e}");
             }
         }
 
-        let parameters_file = paths::parameters_file("", "");
+        let parameters_file = parameters_file("", "");
 
         // try to load parameters from file
         if let Ok(yaml_str) = fs::read_to_string(&parameters_file) {
@@ -213,47 +213,9 @@ impl Parameters {
 
         println!("\n---\nparameters:\n{res}");
 
-        // ask for confirmation before install
-        loop {
-            let proceed = ask_user_input("proceed with the installation? [yn]");
-            match proceed.to_lowercase().as_str() {
-                "y" => break,
-                "n" => {
-                    println!("exiting...");
-                    process::exit(0);
-                }
-                _ => {
-                    println!("unknown input '{proceed}', please enter y or n");
-                }
-            }
-        }
+        ask_confirmation("proceed with the installation?");
 
         res
-    }
-}
-
-pub fn read_user_input() -> String {
-    let mut input = String::new();
-    let stdin = io::stdin();
-    match stdin.read_line(&mut input) {
-        Ok(_) => return input.trim().to_owned(),
-        Err(e) => panic!("failed to read user's input: {e}"),
-    }
-}
-
-pub fn ask_user_input(msg: &str) -> String {
-    println!("{msg} ");
-    return read_user_input();
-}
-
-fn env_or_input(var: &str, msg: &str) -> String {
-    println!("{msg} ");
-    let var_res = env::var(var);
-    if var_res.is_ok() {
-        println!("using value from '{var}' variable");
-        var_res.unwrap()
-    } else {
-        read_user_input()
     }
 }
 

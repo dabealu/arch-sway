@@ -8,13 +8,14 @@ use std::env;
 use task_lists::*;
 
 const HELP_MESSAGE: &str = "available flags:
-* list            - print tasks list without execution
-* install         - run tasks to install the system
-* sync            - use git repo to sync configs 
-* start-from      - start installation from specific task
-* clear-progress  - remove file with saved progress
-* update-bin      - compile new bin from local repo
-* build-iso       - create iso with arch-sway bin included";
+* list                - print tasks list without execution
+* install             - run tasks to install the system
+* sync                - use git repo to sync configs 
+* start-from          - start installation from specific task
+* clear-progress      - remove file with saved progress
+* update-bin          - compile new bin from local repo
+* build-iso           - create iso with arch-sway bin included
+* format-dev dev iso  - format device to include storage and boot partitions";
 
 fn main() {
     let mut args = env::args();
@@ -44,6 +45,13 @@ fn main() {
             "build-iso" => {
                 if let Err(e) = tasks::create_iso() {
                     println!("failed to create iso: {e}");
+                }
+            }
+            "format-dev" => {
+                let dev_path = &args.next().expect("error: missing path to storage device");
+                let iso_path = &args.next().expect("error: missing path to iso file");
+                if let Err(e) = tasks::format_device(dev_path, iso_path) {
+                    println!("failed to format storage device {dev_path}: {e}");
                 }
             }
             _ => {
