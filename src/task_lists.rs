@@ -201,3 +201,88 @@ pub fn sync_list(parameters: Parameters) -> TaskRunner {
 
     r
 }
+
+pub fn qemu_list(parameters: Parameters) -> TaskRunner {
+    // docs
+    // qemu:    https://wiki.archlinux.org/title/QEMU
+    // network: https://wiki.archlinux.org/title/Systemd-networkd#Bridge_interface
+    //          https://www.freedesktop.org/software/systemd/man/systemd.network.html
+    let mut r = TaskRunner::new();
+
+    r.add(RequireUser::new("qemu_install", "root"));
+    r.add(Command::new(
+        "install_qemu_packages",
+        "pacman -Sy --noconfirm \
+            qemu-base \
+            virt-manager \
+            dmidecode",
+        false,
+        false,
+    ));
+    r.add(Command::new(
+        "add_user_to_libvirt_group",
+        &format!("usermod -a -G libvirt {}", parameters.username),
+        false,
+        false,
+    ));
+
+    r.add(TextFile::new(
+        "/etc/systemd/network/qemu0.netdev",
+        "[NetDev]
+Name=qemu0
+Kind=bridge",
+    ));
+
+    r.add(TextFile::new(
+        "/etc/systemd/network/qemu0.network",
+        "[Match]
+Name=qemu0
+
+[Network]
+Address=10.0.0.1/24
+IPMasquerade=true
+IPForward=true
+DHCPServer=true
+
+[DHCPServer]
+PoolOffset=1
+PoolSize=50
+EmitDNS=yes
+DNS=1.1.1.1",
+    ));
+
+    let net_dev = parameters.net_dev;
+    r.add(TextFile::new(
+        &format!("/etc/systemd/network/qemu0-{net_dev}-uplink.network"),
+        &format!(
+            "[Match]
+Name={net_dev}
+[Network]
+Bridge=br0"
+        ),
+    ));
+
+    r.add(TextFile::new("/etc/qemu/bridge.conf", "allow qemu0"));
+
+    r.add(Command::new(
+        "enable_libvirtd_service",
+        "systemctl enable libvirtd",
+        false,
+        false,
+    ));
+    r.add(Command::new(
+        "start_networkd_and_libvirtd_services",
+        "systemctl restart systemd-networkd libvirtd",
+        false,
+        false,
+    ));
+    r.add(Command::new(
+        "print_services_status",
+        "systemctl status systemd-networkd libvirtd | grep -E '(.service|Active:) '",
+        true,
+        true,
+    ));
+    r.add(Info::new("done, to open gui run `virt-manager`"));
+
+    r
+}

@@ -10,9 +10,10 @@ use task_lists::*;
 const HELP_MESSAGE: &str = "available flags:
 * list                - print tasks list without execution
 * install             - run tasks to install the system
-* sync                - use git repo to sync configs 
 * start-from          - start installation from specific task
 * clear-progress      - remove file with saved progress
+* sync                - use git repo to sync configs 
+* qemu                - install and configure qemu/kvm
 * update-bin          - compile new bin from local repo
 * build-iso           - create iso with arch-sway bin included
 * format-dev dev iso  - format device to include storage and boot partitions";
@@ -25,6 +26,7 @@ fn main() {
             "list" => installation_list(parameters::Parameters::dummy()).list(),
             "install" => installation_list(parameters::Parameters::build()).run(),
             "sync" => sync_list(parameters::Parameters::build()).run(),
+            "qemu" => qemu_list(parameters::Parameters::build()).run(),
             "start-from" => {
                 if let Some(task_id) = args.next() {
                     installation_list(parameters::Parameters::build()).run_from(&task_id);
