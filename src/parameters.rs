@@ -40,9 +40,7 @@ impl Parameters {
     pub fn build() -> Parameters {
         let conf_dir = conf_dir("", "");
         if !Path::new(&conf_dir).exists() {
-            if let Err(e) = std::fs::create_dir_all(conf_dir) {
-                panic!("failed to create conf directory: {e}");
-            }
+            create_dir(&conf_dir).unwrap();
         }
 
         let parameters_file = parameters_file("", "");

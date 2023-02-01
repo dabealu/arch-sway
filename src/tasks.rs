@@ -21,9 +21,7 @@ pub fn save_progress(dest: &str, task: &str) -> Result<(), TaskError> {
         match dest_path.parent() {
             Some(dir_path) => match dir_path.to_str() {
                 Some(path_str) => {
-                    if let Err(e) = std::fs::create_dir_all(path_str) {
-                        return Err(TaskError::new(&format!("failed to create directory {e}")));
-                    }
+                    create_dir(path_str)?;
                 }
                 None => {
                     return path_err;
@@ -139,6 +137,7 @@ impl TaskRunner {
                 continue;
             }
 
+            // actual task execution
             let run_result = t.run();
 
             match t.signal() {
@@ -307,25 +306,38 @@ impl Task for StageCompleted {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        let bin_file = match std::env::current_exe() {
-            Ok(exe_path) => exe_path.display().to_string(),
-            Err(_) => paths::bin_file(""),
-        };
+        let ok = Ok("".to_string());
 
+        if self.chroot.is_empty() && self.user.is_empty() {
+            return ok;
+        }
+
+        let repo_dir = &paths::repo_dir("", "");
         let src_dir = &paths::src_dir("", "");
         let conf_dir = &paths::conf_dir("", "");
         let src_dir_dest = &paths::src_dir(&self.chroot, &self.user);
         let conf_dir_dest = &paths::conf_dir(&self.chroot, &self.user);
 
-        // TODO: get rid of bash
+        create_dir(src_dir_dest)?;
+
         if !self.chroot.is_empty() {
-            run_cmd(
-                &format!("mv {} {}", bin_file, paths::bin_file(&self.chroot)),
-                false,
-            )?;
+            let bin_file = match std::env::current_exe() {
+                Ok(exe_path) => exe_path.display().to_string(),
+                Err(_) => paths::bin_file(""),
+            };
+
+            let bin_file_dest = paths::bin_file(&self.chroot);
+            println!("moving {bin_file} -> {bin_file_dest}");
+            // TODO: get rid of bash
+            run_cmd(&format!("mv {bin_file} {bin_file_dest}"), false)?;
         }
-        run_cmd(&format!("mv {} {}", src_dir, src_dir_dest,), false)?;
-        run_cmd(&format!("mv {} {}", conf_dir, conf_dir_dest,), false)?;
+
+        // moving repo_dir instead of src, otherwise it will result in `src/src/arch-sway`
+        println!("moving {repo_dir} -> {src_dir_dest}");
+        run_cmd(&format!("mv {repo_dir} {src_dir_dest}"), false)?;
+
+        println!("moving {conf_dir} -> {conf_dir_dest}");
+        run_cmd(&format!("mv {conf_dir} {conf_dir_dest}"), false)?;
 
         if !self.user.is_empty() {
             run_shell(
@@ -339,7 +351,7 @@ impl Task for StageCompleted {
             symlink(src_dir_dest, src_dir)?;
         }
 
-        Ok("".to_string())
+        ok
     }
 }
 
@@ -647,9 +659,7 @@ impl Task for Resolved {
     fn run(&self) -> Result<String, TaskError> {
         line_in_file("/etc/resolv.conf", "nameserver 127.0.0.53")?;
 
-        if let Err(e) = std::fs::create_dir_all("/etc/systemd/resolved.conf.d") {
-            return Err(TaskError::new(&format!("failed to create directory {e}")));
-        }
+        create_dir("/etc/systemd/resolved.conf.d")?;
 
         copy_file(
             &format!("{}/assets/files/dns_servers.conf", paths::repo_dir("", "")),
@@ -679,9 +689,7 @@ impl Task for Netplan {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        if let Err(e) = std::fs::create_dir_all("/etc/netplan") {
-            return Err(TaskError::new(&format!("failed to create directory {e}")));
-        }
+        create_dir("/etc/netplan")?;
 
         if self.parameters.wifi_enabled {
             // TODO: use proper templating
@@ -778,9 +786,7 @@ impl Task for SwayConfigs {
     fn run(&self) -> Result<String, TaskError> {
         let username = &self.parameters.username;
 
-        if let Err(e) = std::fs::create_dir_all(format!("/home/{}/.config/sway/conf.d", username)) {
-            return Err(TaskError::new(&format!("failed to create directory {e}")));
-        }
+        create_dir(&format!("/home/{username}/.config/sway/conf.d"))?;
 
         match fs::read_dir(format!("{}/assets/conf", paths::repo_dir("", ""))) {
             Ok(read_dir) => {
@@ -870,6 +876,7 @@ impl Task for GitRepo {
 
     fn run(&self) -> Result<String, TaskError> {
         let dest = paths::repo_dir("", "");
+        let repo = "https://github.com/dabealu/arch-sway.git";
 
         if Path::new::<String>(&dest).exists() {
             return Ok(format!(
@@ -877,10 +884,8 @@ impl Task for GitRepo {
             ));
         }
 
-        run_cmd(
-            &format!("git clone https://github.com/dabealu/arch-sway.git {dest}"),
-            false,
-        )
+        println!("cloning {repo} to {dest}");
+        run_cmd(&format!("git clone {repo} {dest}"), false)
     }
 }
 
@@ -1126,9 +1131,7 @@ impl Task for Bashrc {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        if let Err(e) = fs::create_dir_all(format!("/home/{}/bin", self.parameters.username)) {
-            return Err(TaskError::new(&e.to_string()));
-        }
+        create_dir(&format!("/home/{}/bin", self.parameters.username))?;
 
         copy_file(
             &format!("{}/assets/files/bashrc", paths::repo_dir("", "")),
@@ -1157,7 +1160,7 @@ impl WifiConnect {
 
 impl Task for WifiConnect {
     fn name(&self) -> String {
-        format!("connect_to_wifi_ssid_{}", &self.parameters.wifi_ssid)
+        format!("connect_to_wifi_ssid:{}", &self.parameters.wifi_ssid)
     }
 
     fn run(&self) -> Result<String, TaskError> {
@@ -1275,9 +1278,7 @@ pub fn create_iso() -> Result<(), TaskError> {
 
     run_cmd(&format!("sudo rm -rf {archiso_dir}"), false)?;
 
-    if let Err(e) = std::fs::create_dir_all(&archiso_dir) {
-        return Err(TaskError::new(&format!("failed to create directory {e}")));
-    }
+    create_dir(&archiso_dir)?;
 
     // TODO: implement copy_dir
     run_shell(&format!("cp -r {releng_dir} {archiso_dir}"), false)?;
@@ -1373,10 +1374,9 @@ pub fn format_device(dev_path: &str, iso_path: &str) -> Result<(), TaskError> {
     // mount fs located in the storage device and extract the contents of the iso image to it
     println!("copying iso to {dev_path}1");
     let mnt_dir = join_paths(&paths::repo_dir("", ""), "iso-device-mnt");
-    if let Err(e) = std::fs::create_dir_all(&mnt_dir) {
-        println!("failed to create directory {mnt_dir}: {e}");
-        process::exit(1);
-    }
+
+    create_dir(&mnt_dir).unwrap();
+
     run_cmd(&format!("sudo mount {dev_path}1 {mnt_dir}"), false)?;
     run_cmd(&format!("sudo bsdtar -x -f {iso_path} -C {mnt_dir}"), false)?;
 

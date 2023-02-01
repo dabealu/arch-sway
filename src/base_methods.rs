@@ -140,6 +140,15 @@ pub fn symlink(origin: &str, link: &str) -> Result<String, TaskError> {
     Ok("".to_string())
 }
 
+pub fn create_dir(path: &str) -> Result<(), TaskError> {
+    if let Err(e) = std::fs::create_dir_all(path) {
+        return Err(TaskError::new(&format!(
+            "failed to create directory {path}: {e}"
+        )));
+    }
+    Ok(())
+}
+
 pub fn join_paths(a: &str, b: &str) -> String {
     a.trim_end_matches("/").to_string() + "/" + &b.trim_start_matches("/")
 }
