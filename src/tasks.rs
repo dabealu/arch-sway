@@ -111,11 +111,13 @@ impl TaskRunner {
     }
 
     pub fn run(&self) {
-        let mut task_saved = "".to_string();
-        match load_progress() {
-            Ok(s) => task_saved = s,
-            Err(e) => println!("\x1b[93m\x1b[1m▒▒ warning: failed to load status: \x1b[0m{e}"),
-        }
+        let mut task_saved = match load_progress() {
+            Ok(s) => s,
+            Err(e) => {
+                println!("\x1b[93m\x1b[1m▒▒ warning: failed to load status: \x1b[0m{e}");
+                "".to_string()
+            }
+        };
 
         for t in &self.tasks {
             let task_name = t.name();
@@ -1338,6 +1340,7 @@ pub fn format_device(dev_path: &str, iso_path: &str) -> Result<(), TaskError> {
     // path and iso name example: /home/user/Downloads/archlinux-2022.10.01-x86_64.iso
     let parse_err =
         "unable to parse date from iso file name, expected format: archlinux-2022.10.01-x86_64.iso";
+
     let date_vec = Path::new(iso_path)
         .file_name()
         .expect("unable to get file name from iso path")
@@ -1349,6 +1352,7 @@ pub fn format_device(dev_path: &str, iso_path: &str) -> Result<(), TaskError> {
         .expect(parse_err)
         .split(".")
         .collect::<Vec<&str>>(); // -> [2022, 10, 01]
+
     let iso_label = format!(
         "ARCH_{}{}",
         date_vec.get(0).expect(parse_err),

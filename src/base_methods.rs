@@ -64,10 +64,11 @@ pub fn run_cmd(cmd: &str, output: bool) -> Result<String, TaskError> {
         return Err(TaskError::new("command cannot be empty"));
     }
 
-    let mut args_slice: Vec<&str> = vec![];
-    if cmd_slice.len() > 1 {
-        args_slice = cmd_slice[1..].to_vec();
-    }
+    let args_slice: Vec<&str> = if cmd_slice.len() > 1 {
+        cmd_slice[1..].to_vec()
+    } else {
+        vec![]
+    };
 
     match process::Command::new(cmd_slice[0])
         .args(&args_slice)
@@ -155,10 +156,9 @@ pub fn join_paths(a: &str, b: &str) -> String {
 
 fn read_user_input() -> String {
     let mut input = String::new();
-    let stdin = io::stdin();
-    match stdin.read_line(&mut input) {
+    match io::stdin().read_line(&mut input) {
         Ok(_) => return input.trim().to_owned(),
-        Err(e) => panic!("failed to read user's input: {e}"),
+        Err(e) => panic!("failed to read user's input from stdin: {e}"),
     }
 }
 

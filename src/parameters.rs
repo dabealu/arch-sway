@@ -92,10 +92,11 @@ impl Parameters {
         println!("enter parameters:");
 
         // EFI
-        let mut efi = false;
-        if Path::new("/sys/firmware/efi").exists() {
-            efi = true;
-        }
+        let efi = if Path::new("/sys/firmware/efi").exists() {
+            true
+        } else {
+            false
+        };
 
         // block dev
         let block_devices = list_block_dev();
@@ -103,73 +104,74 @@ impl Parameters {
             panic!("fatal: no block devices found")
         }
         let mut block_dev = ask_user_input(&format!("block device {:?}:", block_devices));
-        if block_dev.len() == 0 {
+        if block_dev.is_empty() {
             block_dev = block_devices[0].clone();
         }
 
         // partition prefix - "" for sdaX, and "p" for nvme0n1pX
-        let mut block_dev_prefix = "".to_string();
-        if block_dev.starts_with("nvme") {
-            block_dev_prefix = "p".to_string();
-        }
+        let block_dev_prefix = if block_dev.starts_with("nvme") {
+            "p".to_string()
+        } else {
+            "".to_string()
+        };
 
         // timezone
-        let default_tz = "America/Toronto";
+        let default_tz = "America/Toronto".to_string();
         let mut tz = ask_user_input(&format!("timezone [{default_tz}]:"));
-        if tz.len() == 0 {
-            tz = default_tz.to_string();
+        if tz.is_empty() {
+            tz = default_tz;
         }
 
         // hostname
-        let default_hostname = "dhost";
+        let default_hostname = "dhost".to_string();
         let mut hostname = ask_user_input(&format!("hostname [{default_hostname}]:"));
-        if hostname.len() == 0 {
-            hostname = default_hostname.to_string();
+        if hostname.is_empty() {
+            hostname = default_hostname;
         }
 
         // username
-        let default_user = "user";
+        let default_user = "user".to_string();
         let mut user = ask_user_input(&format!("username [{default_user}]:"));
-        if user.len() == 0 {
-            user = default_user.to_string();
+        if user.is_empty() {
+            user = default_user;
         }
 
         // network interface
         let net_devices = list_net_dev().unwrap();
         if net_devices.is_empty() {
-            panic!(
-                "fatal: cannot find (regex: {}) any network interface!",
-                NETWORK_INTERFACES_REGEX
-            );
+            panic!("fatal: cannot find (regex: {NETWORK_INTERFACES_REGEX}) any network interface!");
         }
         let net_dev_default = net_devices[0].clone();
 
         let mut net_dev_iso = ask_user_input(&format!(
             "network interface (available:{net_devices:?}) [{net_dev_default}]:"
         ));
-        if net_dev_iso.len() == 0 {
+        if net_dev_iso.is_empty() {
             net_dev_iso = net_dev_default;
         }
 
         // wifi
-        let mut default_wifi = false;
-        if net_dev_iso.starts_with("wlan") || net_dev_iso.starts_with("wlp") {
-            default_wifi = true;
-        }
-        let wifi_str = ask_user_input(&format!("configure wifi [{default_wifi}]"));
-        let wifi = match wifi_str.as_ref() {
+        let default_wifi = if net_dev_iso.starts_with("wlan") || net_dev_iso.starts_with("wlp") {
+            true
+        } else {
+            false
+        };
+
+        let wifi = match ask_user_input(&format!("configure wifi [{default_wifi}]")).as_ref() {
             "" => default_wifi,
             "true" => true,
             "false" => false,
             _ => panic!("configure wifi is a boolean parameter"), // TODO: move to separate fn and retry ask input
         };
 
-        let mut wifi_ssid = "".to_string();
-        let mut wifi_passwd = "".to_string();
-        if wifi {
-            wifi_ssid = env_or_input("WIFI_SSID", "wifi ssid:");
-            wifi_passwd = env_or_input("WIFI_PASSWD", "wifi password:");
-        }
+        let (wifi_ssid, wifi_passwd) = if wifi {
+            (
+                env_or_input("WIFI_SSID", "wifi ssid:"),
+                env_or_input("WIFI_PASSWD", "wifi password:"),
+            )
+        } else {
+            ("".to_string(), "".to_string())
+        };
 
         // archiso uses traditional interface naming like eth0, wla0, etc
         // but interfaces named by udev during later stages (e.g. enp, wlp),
@@ -192,7 +194,7 @@ impl Parameters {
             }
         }
 
-        let res = Parameters {
+        let p = Parameters {
             efi: efi,
             block_device: block_dev,
             part_num: if efi { 2 } else { 1 },
@@ -209,11 +211,11 @@ impl Parameters {
             wifi_password: wifi_passwd,
         };
 
-        println!("\n---\nparameters:\n{res}");
+        println!("\n▒▒ parameters:\n{p}");
 
-        ask_confirmation("proceed with the installation?");
+        ask_confirmation("▒▒ proceed with the installation?");
 
-        res
+        p
     }
 }
 
