@@ -114,7 +114,7 @@ impl TaskRunner {
         let mut task_saved = match load_progress() {
             Ok(s) => s,
             Err(e) => {
-                println!("\x1b[93m\x1b[1m▒▒ warning: failed to load status: \x1b[0m{e}");
+                eprintln!("\x1b[93m\x1b[1m▒▒ warning: failed to load status: \x1b[0m{e}");
                 "".to_string()
             }
         };

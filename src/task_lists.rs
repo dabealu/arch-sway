@@ -33,7 +33,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
             linux linux-firmware base base-devel \
             grub efibootmgr dosfstools os-prober mtools \
             systemd-resolvconf wpa_supplicant netplan \
-            openssh dnsutils curl git unzip vim sudo man tmux \
+            openssh dnsutils curl git unzip vim sudo man man-pages tmux \
             sysstat bash-completion go",
         false,
         false,

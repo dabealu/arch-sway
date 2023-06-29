@@ -32,13 +32,13 @@ fi
 
 # display number ranges from 1 to number of connected displays
 case $OPT in
-  set_brightness 10
+  set_brightness 15
   ;;
 1)
   set_brightness 35
   ;;
 2)
-  set_brightness 60
+  set_brightness 67
   ;;
 3)
   set_brightness 100

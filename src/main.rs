@@ -23,33 +23,33 @@ fn main() {
     let cmd = args.next().unwrap_or("arch-sway".to_string());
     match args.next() {
         Some(flag) => match flag.as_ref() {
-            "list" | "l" => installation_list(parameters::Parameters::dummy()).list(),
-            "install" | "i" => installation_list(parameters::Parameters::build()).run(),
-            "sync" | "s" => sync_list(parameters::Parameters::build()).run(),
-            "qemu" | "q" => qemu_list(parameters::Parameters::build()).run(),
-            "start-from" | "t" => {
+            "l" | "list" => installation_list(parameters::Parameters::dummy()).list(),
+            "i" | "install" => installation_list(parameters::Parameters::build()).run(),
+            "s" | "sync" => sync_list(parameters::Parameters::build()).run(),
+            "q" | "qemu" => qemu_list(parameters::Parameters::build()).run(),
+            "t" | "start-from" => {
                 if let Some(task_id) = args.next() {
                     installation_list(parameters::Parameters::build()).run_from(&task_id);
                 } else {
                     println!("usage: {cmd} continue <task_id>");
                 }
             }
-            "clear-progress" | "c" => {
+            "c" | "clear-progress" => {
                 if let Err(e) = tasks::clear_progress() {
                     println!("failed to clear current progress: {e}");
                 }
             }
-            "update-bin" | "u" => {
+            "u" | "update-bin" => {
                 if let Err(e) = tasks::update_bin() {
                     println!("failed to build new binary: {e}");
                 }
             }
-            "build-iso" | "b" => {
+            "b" | "build-iso" => {
                 if let Err(e) = tasks::create_iso() {
                     println!("failed to create iso: {e}");
                 }
             }
-            "format-dev" | "f" => {
+            "f" | "format-dev" => {
                 let dev_path = &args.next().expect("error: missing path to storage device");
                 let iso_path = &args.next().expect("error: missing path to iso file");
                 if let Err(e) = tasks::format_device(dev_path, iso_path) {
@@ -60,6 +60,6 @@ fn main() {
                 println!("unknown flag '{flag}', {HELP_MESSAGE}")
             }
         },
-        None => println!("specify flag, {HELP_MESSAGE}"),
+        None => println!("missing flag, {HELP_MESSAGE}"),
     }
 }
