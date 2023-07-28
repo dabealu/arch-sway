@@ -1228,11 +1228,6 @@ impl Task for ConfigureIDE {
 
     fn run(&self) -> Result<String, TaskError> {
         let user = &self.parameters.username;
-        copy_file(
-            &format!("{}/assets/files/settings.json", paths::repo_dir("", "")),
-            &format!("/home/{user}/.config/Code - OSS/User/settings.json"),
-        )?;
-
         let extensions = vec![
             "golang.go",
             "rust-lang.rust-analyzer",
@@ -1247,6 +1242,11 @@ impl Task for ConfigureIDE {
                 false,
             )?;
         }
+
+        copy_file(
+            &format!("{}/assets/files/settings.json", paths::repo_dir("", "")),
+            &format!("/home/{user}/.config/Code - OSS/User/settings.json"),
+        )?;
 
         Ok("".to_string())
     }
