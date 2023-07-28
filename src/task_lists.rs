@@ -181,6 +181,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         false,
         false,
     ));
+    r.add(InstallTools::new(parameters.clone()));
     r.add(Info::new("installation finished: reboot and run `sway`"));
     r.add(StageCompleted::new("installation_completed", "", &username));
 

@@ -1139,9 +1139,42 @@ impl Task for Bashrc {
             &format!("{}/assets/files/bashrc", paths::repo_dir("", "")),
             &format!("/home/{}/.bashrc", self.parameters.username),
         )?;
+
+        Ok("".to_string())
+    }
+}
+
+pub struct InstallTools {
+    parameters: Parameters,
+}
+
+impl InstallTools {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(InstallTools {
+            parameters: parameters,
+        })
+    }
+}
+
+impl Task for InstallTools {
+    fn name(&self) -> String {
+        "install_tools".to_string()
+    }
+
+    fn run(&self) -> Result<String, TaskError> {
+        // TODO:
+        // compile brightness control: cd tools && go build -o brightness-control brightness_control.go && mv brightness-control ~/user/bin/
+        let tools_dir = join_paths(&paths::repo_dir("", ""), "tools");
+        run_cmd(
+            &format!(
+                "go build -o {tools_dir}/brightness-control {tools_dir}/brightness_control.go"
+            ),
+            false,
+        )?;
+
         copy_file(
-            &format!("{}/assets/files/brightness.sh", paths::repo_dir("", "")),
-            &format!("/home/{}/bin/brightness.sh", self.parameters.username),
+            &format!("{tools_dir}/brightness-control"),
+            &format!("/home/{}/bin", self.parameters.username),
         )?;
 
         Ok("".to_string())
