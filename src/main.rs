@@ -16,7 +16,8 @@ const HELP_MESSAGE: &str = "available flags:
 * q | qemu                - install and configure qemu/kvm
 * u | update-bin          - compile new bin from local repo
 * b | build-iso           - create iso with arch-sway bin included
-* f | format-dev dev iso  - format device to include storage and boot partitions";
+* f | format-dev dev iso  - format device to include storage and boot partitions
+* v | version             - print version and exit";
 
 fn main() {
     let mut args = env::args();
@@ -27,11 +28,12 @@ fn main() {
             "i" | "install" => installation_list(parameters::Parameters::build()).run(),
             "s" | "sync" => sync_list(parameters::Parameters::build()).run(),
             "q" | "qemu" => qemu_list(parameters::Parameters::build()).run(),
+            // TODO: to run task T it's required to actually specify task previous to T which is confusing
             "t" | "start-from" => {
                 if let Some(task_id) = args.next() {
                     installation_list(parameters::Parameters::build()).run_from(&task_id);
                 } else {
-                    println!("usage: {cmd} continue <task_id>");
+                    println!("usage: {cmd} start-from <task_id>");
                 }
             }
             "c" | "clear-progress" => {
@@ -45,7 +47,7 @@ fn main() {
                 }
             }
             "b" | "build-iso" => {
-                if let Err(e) = tasks::create_iso() {
+                if let Err(e) = tasks::create_iso(parameters::Parameters::build()) {
                     println!("failed to create iso: {e}");
                 }
             }
@@ -55,6 +57,9 @@ fn main() {
                 if let Err(e) = tasks::format_device(dev_path, iso_path) {
                     println!("failed to format storage device {dev_path}: {e}");
                 }
+            }
+            "v" | "version" => {
+                println!("v{}", env!("CARGO_PKG_VERSION"));
             }
             _ => {
                 println!("unknown flag '{flag}', {HELP_MESSAGE}")

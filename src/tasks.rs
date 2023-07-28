@@ -1,3 +1,4 @@
+use chrono::Utc;
 use std::collections::HashMap;
 use std::fs::Permissions;
 use std::os::unix::prelude::PermissionsExt;
@@ -114,7 +115,7 @@ impl TaskRunner {
         let mut task_saved = match load_progress() {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("\x1b[93m\x1b[1m▒▒ warning: failed to load status: \x1b[0m{e}");
+                eprintln!("\x1b[93m\x1b[1m▒▒ warning: failed to load progress: \x1b[0m{e}");
                 "".to_string()
             }
         };
@@ -317,6 +318,7 @@ impl Task for StageCompleted {
         let repo_dir = &paths::repo_dir("", "");
         let src_dir = &paths::src_dir("", "");
         let conf_dir = &paths::conf_dir("", "");
+        let repo_dir_dest = &paths::repo_dir(&self.chroot, &self.user);
         let src_dir_dest = &paths::src_dir(&self.chroot, &self.user);
         let conf_dir_dest = &paths::conf_dir(&self.chroot, &self.user);
 
@@ -329,22 +331,26 @@ impl Task for StageCompleted {
             };
 
             let bin_file_dest = paths::bin_file(&self.chroot);
-            println!("moving {bin_file} -> {bin_file_dest}");
+            println!("moving binary {bin_file} -> {bin_file_dest}");
             // TODO: get rid of bash
             run_cmd(&format!("mv {bin_file} {bin_file_dest}"), false)?;
         }
 
         // moving repo_dir instead of src, otherwise it will result in `src/src/arch-sway`
-        println!("moving {repo_dir} -> {src_dir_dest}");
-        run_cmd(&format!("mv {repo_dir} {src_dir_dest}"), false)?;
+        if !is_file_exist(repo_dir_dest) {
+            println!("moving repo dir {repo_dir} -> {repo_dir_dest}");
+            run_cmd(&format!("mv {repo_dir} {repo_dir_dest}"), false)?;
+        }
 
-        println!("moving {conf_dir} -> {conf_dir_dest}");
-        run_cmd(&format!("mv {conf_dir} {conf_dir_dest}"), false)?;
+        if !is_file_exist(conf_dir_dest) {
+            println!("moving conf dir {conf_dir} -> {conf_dir_dest}");
+            run_cmd(&format!("mv {conf_dir} {conf_dir_dest}"), false)?;
+        }
 
         if !self.user.is_empty() {
             run_shell(
                 &format!(
-                    "chown -R {}:{} {src_dir_dest} {conf_dir_dest}",
+                    "sudo chown -R {}:{} {src_dir_dest} {conf_dir_dest}",
                     self.user, self.user
                 ),
                 false,
@@ -685,12 +691,15 @@ impl Netplan {
     }
 }
 
+// TODO: get rid of netplan in favor of networkd
 impl Task for Netplan {
     fn name(&self) -> String {
         "netplan_configuration".to_string()
     }
 
     fn run(&self) -> Result<String, TaskError> {
+        run_cmd("pacman -Sy --noconfirm dbus-python python-rich", false)?;
+
         create_dir("/etc/netplan")?;
 
         if self.parameters.wifi_enabled {
@@ -1162,22 +1171,14 @@ impl Task for InstallTools {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        // TODO:
-        // compile brightness control: cd tools && go build -o brightness-control brightness_control.go && mv brightness-control ~/user/bin/
-        let tools_dir = join_paths(&paths::repo_dir("", ""), "tools");
         run_cmd(
             &format!(
-                "go build -o {tools_dir}/brightness-control {tools_dir}/brightness_control.go"
+                "go build -o /home/{}/bin/brightness-control {}/brightness_control.go",
+                self.parameters.username,
+                join_paths(&paths::repo_dir("", ""), "tools")
             ),
             false,
-        )?;
-
-        copy_file(
-            &format!("{tools_dir}/brightness-control"),
-            &format!("/home/{}/bin", self.parameters.username),
-        )?;
-
-        Ok("".to_string())
+        )
     }
 }
 
@@ -1298,7 +1299,7 @@ impl Task for FlatpakPackages {
     }
 }
 
-pub fn create_iso() -> Result<(), TaskError> {
+pub fn create_iso(parameters: Parameters) -> Result<(), TaskError> {
     let releng_dir = "/usr/share/archiso/configs/releng";
     let repo_dir = paths::repo_dir("", "");
     let bin_path = join_paths(&repo_dir, "target/release/arch-sway");
@@ -1325,11 +1326,18 @@ pub fn create_iso() -> Result<(), TaskError> {
         &format!("file_permissions=(\n  [\"/usr/local/bin/arch-sway\"]=\"0:0:755\""),
     )?;
 
-    println!("building iso, it make take a while...");
-    run_shell(
-        // mkarchiso must be run as root
+    println!("building iso, it may take a while...");
+    let script = &format!(
+        "cd {archiso_dir} && sudo mkarchiso -v -w . -o {iso_builds_dir} {releng_copy_dir}"
+    );
+    // mkarchiso must be run as root
+    println!("running: {script}");
+    run_shell(&script, false)?;
+
+    run_cmd(
         &format!(
-            "cd {archiso_dir} && sudo mkarchiso -v -w . -o {iso_builds_dir} {releng_copy_dir}"
+            "sudo chown -R {}:{} {archiso_dir}",
+            parameters.user_id, parameters.user_gid
         ),
         false,
     )?;
@@ -1357,8 +1365,10 @@ fn build_bin() -> Result<(), TaskError> {
             "cd {} && \
             cargo fmt && \
             cargo test && \
+            export ARCHSWAY_RELEASE_VERSION={} && \
             cargo build -r",
-            paths::repo_dir("", "")
+            paths::repo_dir("", ""),
+            Utc::now().format("%Y.%m.%d-%H.%M.%S")
         ),
         false,
     )?;

@@ -34,7 +34,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
             grub efibootmgr dosfstools os-prober mtools \
             systemd-resolvconf wpa_supplicant netplan \
             openssh dnsutils curl git unzip vim sudo man man-pages tmux \
-            sysstat bash-completion go",
+            sysstat bash-completion go lsof strace",
         false,
         false,
     ));
@@ -196,6 +196,7 @@ pub fn sync_list(parameters: Parameters) -> TaskRunner {
     r.add(Variables::new());
     r.add(SwayConfigs::new(parameters.clone()));
     r.add(Bashrc::new(parameters.clone()));
+    r.add(InstallTools::new(parameters.clone()));
     r.add(Info::new(
         "config sync finished. `Super+Shift+r` to reload desktop",
     ));

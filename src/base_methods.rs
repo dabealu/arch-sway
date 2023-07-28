@@ -3,6 +3,13 @@ use std::{env, fs, io, io::Write, path::Path, process};
 
 use crate::tasks::TaskError;
 
+pub fn is_file_exist(path: &str) -> bool {
+    match fs::metadata(path) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
 // create file with specified content
 pub fn text_file(path: &str, content: &str) -> Result<String, TaskError> {
     match fs::write(path, content) {

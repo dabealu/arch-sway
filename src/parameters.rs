@@ -49,7 +49,7 @@ impl Parameters {
         if let Ok(yaml_str) = fs::read_to_string(&parameters_file) {
             let yaml_res: Result<Parameters, _> = serde_yaml::from_str(&yaml_str);
             if let Ok(params) = yaml_res {
-                println!("got parameters from file '{parameters_file}'");
+                println!("got parameters from '{parameters_file}'");
                 return params;
             }
         }
