@@ -348,9 +348,9 @@ impl Task for StageCompleted {
         }
 
         if !self.user.is_empty() {
-            run_shell(
+            run_cmd(
                 &format!(
-                    "sudo chown -R {}:{} {src_dir_dest} {conf_dir_dest}",
+                    "chown -R {}:{} {src_dir_dest} {conf_dir_dest}",
                     self.user, self.user
                 ),
                 false,
@@ -825,7 +825,10 @@ impl Task for SwayConfigs {
 
         // TODO: use https://doc.rust-lang.org/stable/std/os/unix/fs/fn.chown.html - currently nightly
         run_cmd(
-            &format!("chown -R {username}:{username} /home/{username}"),
+            &format!(
+                "chown -R {}:{} /home/{username}",
+                &self.parameters.user_id, &self.parameters.user_gid
+            ),
             false,
         )?;
         run_cmd(
@@ -1142,11 +1145,21 @@ impl Task for Bashrc {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        create_dir(&format!("/home/{}/bin", self.parameters.username))?;
+        let bin_dir = &format!("/home/{}/bin", self.parameters.username);
+        create_dir(&bin_dir)?;
 
+        let bashrc_path = &format!("/home/{}/.bashrc", self.parameters.username);
         copy_file(
             &format!("{}/assets/files/bashrc", paths::repo_dir("", "")),
-            &format!("/home/{}/.bashrc", self.parameters.username),
+            bashrc_path,
+        )?;
+
+        run_cmd(
+            &format!(
+                "chown -R {}:{} {bin_dir} {bashrc_path}",
+                self.parameters.user_id, self.parameters.user_gid
+            ),
+            false,
         )?;
 
         Ok("".to_string())
@@ -1171,11 +1184,20 @@ impl Task for InstallTools {
     }
 
     fn run(&self) -> Result<String, TaskError> {
+        let home_bin_dir = &format!("/home/{}/bin", self.parameters.username);
+
         run_cmd(
             &format!(
-                "go build -o /home/{}/bin/brightness-control {}/brightness_control.go",
-                self.parameters.username,
+                "go build -o {home_bin_dir}/brightness-control {}/brightness_control.go",
                 join_paths(&paths::repo_dir("", ""), "tools")
+            ),
+            false,
+        )?;
+
+        run_cmd(
+            &format!(
+                "chown -R {}:{} {home_bin_dir}",
+                self.parameters.user_id, self.parameters.user_gid
             ),
             false,
         )
