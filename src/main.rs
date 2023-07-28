@@ -12,7 +12,7 @@ const HELP_MESSAGE: &str = "available flags:
 * i | install             - run tasks to install the system
 * t | start-from          - start installation from specific task
 * c | clear-progress      - remove file with saved progress
-* s | sync                - use git repo to sync configs 
+* s | sync                - sync configs and desktop settings
 * q | qemu                - install and configure qemu/kvm
 * u | update-bin          - compile new bin from local repo
 * b | build-iso           - create iso with arch-sway bin included
@@ -26,8 +26,18 @@ fn main() {
         Some(flag) => match flag.as_ref() {
             "l" | "list" => installation_list(parameters::Parameters::dummy()).list(),
             "i" | "install" => installation_list(parameters::Parameters::build()).run(),
-            "s" | "sync" => sync_list(parameters::Parameters::build()).run(),
-            "q" | "qemu" => qemu_list(parameters::Parameters::build()).run(),
+            "s" | "sync" => {
+                if let Err(e) = tasks::clear_progress() {
+                    panic!("failed to clear current progress: {e}");
+                }
+                sync_list(parameters::Parameters::build()).run();
+            }
+            "q" | "qemu" => {
+                if let Err(e) = tasks::clear_progress() {
+                    panic!("failed to clear current progress: {e}");
+                }
+                qemu_list(parameters::Parameters::build()).run()
+            }
             // TODO: to run task T it's required to actually specify task previous to T which is confusing
             "t" | "start-from" => {
                 if let Some(task_id) = args.next() {

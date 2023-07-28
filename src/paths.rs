@@ -28,9 +28,15 @@ fn prefix_chroot(chroot: &str, path: &str) -> String {
 
 fn prefix_home(user: &str, path: &str) -> String {
     let user = if user.is_empty() {
-        match env::var("USER") {
+        // check if running under sudo, otherwise use normal user var
+        match env::var("SUDO_USER") {
             Ok(val) => val,
-            Err(e) => panic!("fatal: unable to get value for $USER env var: {e}"),
+            Err(_) => match env::var("USER") {
+                Ok(val) => val,
+                Err(e) => {
+                    panic!("fatal: unable to get value for $USER env var: {e}");
+                }
+            },
         }
     } else {
         user.to_string()

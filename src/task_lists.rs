@@ -181,7 +181,8 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         false,
         false,
     ));
-    r.add(InstallTools::new(parameters.clone()));
+    r.add(ConfigureIDE::new(parameters.clone()));
+    r.add(InstallUtils::new(parameters.clone()));
     r.add(Info::new("installation finished: reboot and run `sway`"));
     r.add(StageCompleted::new("installation_completed", "", &username));
 
@@ -196,7 +197,8 @@ pub fn sync_list(parameters: Parameters) -> TaskRunner {
     r.add(Variables::new());
     r.add(SwayConfigs::new(parameters.clone()));
     r.add(Bashrc::new(parameters.clone()));
-    r.add(InstallTools::new(parameters.clone()));
+    r.add(ConfigureIDE::new(parameters.clone()));
+    r.add(InstallUtils::new(parameters.clone()));
     r.add(Info::new(
         "config sync finished. `Super+Shift+r` to reload desktop",
     ));

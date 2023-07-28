@@ -68,7 +68,7 @@ output * bg  #000000 solid_color
 # It will also lock the screen before sleep.
 exec swayidle -w \
     timeout 2400 'swaylock -f -c 000000' \
-    timeout 3600 'swaymsg "output * dpms off"' \
+    timeout 7200 'swaymsg "output * dpms off"' \
     resume       'swaymsg "output * dpms on"' \
     before-sleep 'swaylock -f -c 000000'
 

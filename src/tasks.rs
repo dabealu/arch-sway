@@ -54,8 +54,13 @@ pub fn load_progress() -> Result<String, TaskError> {
 }
 
 pub fn clear_progress() -> Result<(), TaskError> {
-    if let Err(e) = fs::remove_file(paths::progress_file("", "")) {
-        return Err(TaskError::new(&e.to_string()));
+    let progress_file_path = paths::progress_file("", "");
+    if is_file_exist(&progress_file_path) {
+        if let Err(e) = fs::remove_file(&progress_file_path) {
+            return Err(TaskError::new(&format!(
+                "failed to remove {progress_file_path}: {e}"
+            )));
+        }
     }
     Ok(())
 }
@@ -1166,21 +1171,21 @@ impl Task for Bashrc {
     }
 }
 
-pub struct InstallTools {
+pub struct InstallUtils {
     parameters: Parameters,
 }
 
-impl InstallTools {
+impl InstallUtils {
     pub fn new(parameters: Parameters) -> Box<dyn Task> {
-        Box::new(InstallTools {
+        Box::new(InstallUtils {
             parameters: parameters,
         })
     }
 }
 
-impl Task for InstallTools {
+impl Task for InstallUtils {
     fn name(&self) -> String {
-        "install_tools".to_string()
+        "install_utilities".to_string()
     }
 
     fn run(&self) -> Result<String, TaskError> {
@@ -1201,6 +1206,49 @@ impl Task for InstallTools {
             ),
             false,
         )
+    }
+}
+
+pub struct ConfigureIDE {
+    parameters: Parameters,
+}
+
+impl ConfigureIDE {
+    pub fn new(parameters: Parameters) -> Box<dyn Task> {
+        Box::new(ConfigureIDE {
+            parameters: parameters,
+        })
+    }
+}
+
+impl Task for ConfigureIDE {
+    fn name(&self) -> String {
+        "configure_editor".to_string()
+    }
+
+    fn run(&self) -> Result<String, TaskError> {
+        let user = &self.parameters.username;
+        copy_file(
+            &format!("{}/assets/files/settings.json", paths::repo_dir("", "")),
+            &format!("/home/{user}/.config/Code - OSS/User/settings.json"),
+        )?;
+
+        let extensions = vec![
+            "golang.go",
+            "rust-lang.rust-analyzer",
+            "GitHub.github-vscode-theme",
+            "PKief.material-icon-theme",
+            "ecmel.vscode-html-css",
+        ];
+
+        for ext in extensions {
+            run_cmd(
+                &format!("sudo -u {user} -- code --install-extension {ext}"),
+                false,
+            )?;
+        }
+
+        Ok("".to_string())
     }
 }
 
@@ -1334,8 +1382,8 @@ pub fn create_iso(parameters: Parameters) -> Result<(), TaskError> {
     println!("building a binary");
     build_bin()?;
 
+    // remove archiso from previous build, it may still exist if previous build failed
     run_cmd(&format!("sudo rm -rf {archiso_dir}"), false)?;
-
     create_dir(&archiso_dir)?;
 
     // TODO: implement copy_dir
@@ -1349,20 +1397,21 @@ pub fn create_iso(parameters: Parameters) -> Result<(), TaskError> {
     )?;
 
     println!("building iso, it may take a while...");
+    // mkarchiso must be run as root
     let script = &format!(
         "cd {archiso_dir} && sudo mkarchiso -v -w . -o {iso_builds_dir} {releng_copy_dir}"
     );
-    // mkarchiso must be run as root
     println!("running: {script}");
     run_shell(&script, false)?;
 
     run_cmd(
         &format!(
-            "sudo chown -R {}:{} {archiso_dir}",
+            "sudo chown -R {}:{} {iso_builds_dir}",
             parameters.user_id, parameters.user_gid
         ),
         false,
     )?;
+    run_cmd(&format!("sudo rm -rf {archiso_dir}"), false)?;
 
     println!("{}", run_cmd("lsblk", true)?);
     println!("done, to create installation media run:\nsudo cp {iso_builds_dir}/archlinux-YYYY.MM.DD-x86_64.iso /dev/sdX");
