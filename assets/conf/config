@@ -33,11 +33,12 @@ set $ws9 "9: 9 "
 set $ws0 "0: 0 "
 
 # Apps placement
-assign [class="Google-chrome"] $ws1
-assign [class="Slack"]         $ws2
-assign [class="Telegram"]      $ws2
-assign [class="code-oss"]      $ws3
-assign [class="Thunar"]        $ws4
+# swaymsg -t get_tree to get app_id/class
+assign [class="Google-chrome"]          $ws1
+assign [class="Slack"]                  $ws2
+assign [class="code-oss"]               $ws3
+assign [app_id="org.telegram.desktop"]  $ws2
+assign [app_id="thunar"]                $ws4
 
 ### Variables
 # Logo key. Use Mod1 for Alt.
