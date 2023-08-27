@@ -112,6 +112,11 @@ bindsym --to-code {
     $mod+Down   focus down
     $mod+Up     focus up
     $mod+Right  focus right
+    # same with hjkl
+    $mod+$left   focus left
+    $mod+$down   focus down
+    $mod+$up     focus up
+    $mod+$right  focus right
     # Cycle focus
     $mod+tab    focus right
 
@@ -120,6 +125,11 @@ bindsym --to-code {
     $mod+Shift+Down   move down
     $mod+Shift+Up     move up
     $mod+Shift+Right  move right
+    # same with hjkl
+    $mod+Shift+$left   move left
+    $mod+Shift+$down   move down
+    $mod+Shift+$up     move up
+    $mod+Shift+$right  move right
 
     # Workspaces:
     # Switch to workspace
@@ -151,7 +161,7 @@ bindsym --to-code {
     # You can "split" the current object of your focus with
     # $mod+b or $mod+v, for horizontal and vertical splits
     # respectively.
-    $mod+h splith
+    $mod+b splith
     $mod+v splitv
 
     # Switch the current container between different layout styles
@@ -245,7 +255,7 @@ mode "$mode_system" {
 bindsym --to-code $mod+Escape mode "$mode_system"
 
 # Screen lock
-bindsym --to-code $mod+Control+l exec swaylock --color "$black"
+bindsym --to-code $mod+Control+b exec swaylock --color "$black"
 
 # Screenshots
 bindsym --to-code --release {
@@ -286,6 +296,9 @@ bindsym --to-code {
     # Switch workspaces via arrow keys
     $mod+Control+Left workspace prev
     $mod+Control+Right workspace next
+    # same with h,l
+    $mod+Control+$left workspace prev
+    $mod+Control+$right workspace next
     # Cycle through workspaces using ~ key
     $mod+grave workspace next
 
