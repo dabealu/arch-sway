@@ -6,5 +6,6 @@
     "workbench.activityBar.visible": false,
     "workbench.statusBar.visible": false,
     "editor.minimap.enabled": false,
-    "breadcrumbs.enabled": false
+    "breadcrumbs.enabled": false,
+    "window.menuBarVisibility": "toggle"
 }
