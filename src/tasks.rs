@@ -1234,6 +1234,7 @@ impl Task for ConfigureIDE {
             "GitHub.github-vscode-theme",
             "PKief.material-icon-theme",
             "ecmel.vscode-html-css",
+            "vscodevim.vim",
         ];
 
         for ext in extensions {
@@ -1243,10 +1244,12 @@ impl Task for ConfigureIDE {
             )?;
         }
 
-        copy_file(
-            &format!("{}/assets/files/settings.json", paths::repo_dir("", "")),
-            &format!("/home/{user}/.config/Code - OSS/User/settings.json"),
-        )?;
+        for conf_file in vec!["settings.json", "keybindings.json"] {
+            copy_file(
+                &format!("{}/assets/files/{conf_file}", paths::repo_dir("", "")),
+                &format!("/home/{user}/.config/Code - OSS/User/{conf_file}"),
+            )?;
+        }
 
         Ok("".to_string())
     }
