@@ -1,24 +1,24 @@
 [
-    // {
-    //     "key": "n",
-    //     "command": "explorer.newFile",
-    //     "when": "filesExplorerFocus && !inputFocus"
-    // },
-    // {
-    //     "key": "shift+n",
-    //     "command": "explorer.newFolder",
-    //     "when": "explorerViewletFocus"
-    // },
     {
         "key": "n",
         "command": "explorer.newFile",
-        "when": "!editorFocus"
+        "when": "filesExplorerFocus && !inputFocus"
     },
     {
         "key": "shift+n",
         "command": "explorer.newFolder",
-        "when": "!editorFocus"
+        "when": "explorerViewletFocus"
     },
+    // {
+    //     "key": "n",
+    //     "command": "explorer.newFile",
+    //     "when": "!editorFocus"
+    // },
+    // {
+    //     "key": "shift+n",
+    //     "command": "explorer.newFolder",
+    //     "when": "!editorFocus"
+    // },
     {
         "command": "renameFile",
         "key": "r",
