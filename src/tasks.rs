@@ -1234,7 +1234,7 @@ impl Task for ConfigureIDE {
             "GitHub.github-vscode-theme",
             "PKief.material-icon-theme",
             "ecmel.vscode-html-css",
-            "vscodevim.vim",
+            // "vscodevim.vim",
         ];
 
         for ext in extensions {
