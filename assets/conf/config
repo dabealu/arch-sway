@@ -311,8 +311,8 @@ bindsym --to-code {
     # Move the current workspace to the next output
     $mod+x move workspace to output right
 
-    # TODO: Translate selected text
-    $mod+z exec "$HOME/bin/translate.sh"
+    # Translate selected text
+    $mod+z exec notify-send Translation $(wl-paste -p | translate)
 
     # Start menu (a program launcher)
     $mod+d exec bemenu-run -b -p '>' --fn '$font $font-size' --tb '$urgent' --tf '$white' --hb '$urgent' --hf '$white'

@@ -1191,13 +1191,20 @@ impl Task for InstallUtils {
     fn run(&self) -> Result<String, TaskError> {
         let home_bin_dir = &format!("/home/{}/bin", self.parameters.username);
 
-        run_cmd(
-            &format!(
-                "go build -o {home_bin_dir}/brightness-control {}/brightness_control.go",
-                join_paths(&paths::repo_dir("", ""), "tools")
-            ),
-            false,
-        )?;
+        let utils = HashMap::from([
+            ("brightness_control.go", "brightness-control"),
+            ("translate.go", "translate"),
+        ]);
+
+        for (filepath, bin) in utils {
+            run_cmd(
+                &format!(
+                    "go build -o {home_bin_dir}/{bin} {}/{filepath}",
+                    join_paths(&paths::repo_dir("", ""), "utils")
+                ),
+                false,
+            )?;
+        }
 
         run_cmd(
             &format!(
