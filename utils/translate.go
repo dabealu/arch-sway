@@ -106,7 +106,7 @@ func translate(from, to, text string) (string, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("request failed %s: %s", resp.Status, string(body))
+		return "", fmt.Errorf("request failed: %s", resp.Status)
 	}
 
 	tr := &TranslationPayload{}
