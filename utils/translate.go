@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -20,30 +20,37 @@ func main() {
 
 	translated, err := translate(from, to, text)
 	if err != nil {
-		log.Fatalf("failed to translate: %s", err)
+		notify(fmt.Sprintf("failed to translate: %s\n", err))
+		return
 	}
+	notify(translated)
+}
 
-	fmt.Println(translated)
+func notify(msg string) {
+	exec.Command("notify-send", "--app-name=translate", "--urgency=low", "Translation", msg).Run()
 }
 
 func readInput() string {
 	// try to get input text from stdin...
 	fi, err := os.Stdin.Stat()
 	if err != nil {
-		log.Fatalf("failed to get stdin file info: %s", err)
+		notify(fmt.Sprintf("failed to get stdin file info: %s\n", err))
+		return ""
 	}
 
 	if (fi.Mode() & os.ModeCharDevice) == 0 {
-		inBytes, err := io.ReadAll(os.Stdin)
+		stdinBytes, err := io.ReadAll(os.Stdin)
 		if err != nil {
-			log.Fatalf("failed to read stdin: %s", err)
+			notify(fmt.Sprintf("failed to read stdin: %s\n", err))
+			return ""
 		}
-		return string(inBytes)
+		return string(stdinBytes)
 	}
 
 	// ...or fallback to args
 	if len(os.Args) < 2 {
-		log.Fatalf("usage: %s 'input text'", os.Args[0])
+		notify(fmt.Sprintf("missing input text, usage: %s input text\n", os.Args[0]))
+		return ""
 	}
 	return strings.Join(os.Args[1:], " ")
 }
@@ -63,7 +70,7 @@ func detectStringLang(s string) (string, string) {
 
 type Sentence struct {
 	Trans string `json:"trans"`
-	Orig  string `json:"orig"`
+	// Orig  string `json:"orig"`
 }
 
 type TranslationPayload struct {

@@ -12,11 +12,11 @@ const HELP_MESSAGE: &str = "available flags:
 * i | install             - run tasks to install the system
 * t | start-from          - start installation from specific task
 * c | clear-progress      - remove file with saved progress
-* s | sync                - sync configs and desktop settings
+* s | sync                - (sudo) sync configs and desktop settings
 * q | qemu                - install and configure qemu/kvm
 * u | update-bin          - compile new bin from local repo
 * b | build-iso           - create iso with arch-sway bin included
-* f | format-dev dev iso  - format device to include storage and boot partitions
+* f | format-dev dev iso  - format device creating storage and boot partitions
 * v | version             - print version and exit";
 
 fn main() {

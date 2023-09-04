@@ -312,7 +312,7 @@ bindsym --to-code {
     $mod+x move workspace to output right
 
     # Translate selected text
-    $mod+z exec notify-send Translation $(wl-paste -p | translate)
+    $mod+z exec wl-paste -p | translate
 
     # Start menu (a program launcher)
     $mod+d exec bemenu-run -b -p '>' --fn '$font $font-size' --tb '$urgent' --tf '$white' --hb '$urgent' --hf '$white'
