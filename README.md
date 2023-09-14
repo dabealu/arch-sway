@@ -1,13 +1,14 @@
 # sway on arch
-arch + sway installation.
+desktop as a code: setup for arch+sway.
 
-two main options:
+preparation before install, few options:
 - prepare installation media with binary included, see `archiso` note
+- format usb stick with two partitions (`arch-sway format-dev`) and copy binary to storage partition
 - use vanilla iso, and copy binary to device running archiso environment (using curl/ssh/etc)
 
 
 ## installation
-run `arch-sway` and follow the instructions.
+run `arch-sway install` and follow the instructions.
 
 `tmux` can help to keep several terminals open for debugging:
 `CTRL+b` and `SHIFT+"` or `SIFT+%` to split, `CTRL+b` and `up|down` to change focus.
@@ -79,11 +80,6 @@ ref: https://wiki.archlinux.org/title/bluetooth#Pairing
 run `swaymsg -t get_outputs` to get list of outputs and `man sway-output` for more options.
 use `wdisplays` for GUI configuration.
 
-### set external display brightness
-```s
-brightness.sh
-```
-
 ### appearance
 use `lxappearance` to set GTK theme and appearance settings.
 lxappearance stores config in `~/.gtkrc-2.0`.
@@ -113,7 +109,7 @@ yay -Sy wev
 
 ### zoom
 use web app, works well with chrome.
-in case zoom app is crashing when joining the meeting:
+desktop app may crash when joining the meeting, with following error:
 ```s
 ANOM_ABEND auid=1000 uid=1000 gid=1000 ses=1 pid=4324 comm="QSGRenderThread" exe="/opt/zoom/zoom" sig=11 res=1
 ```
