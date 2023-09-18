@@ -173,7 +173,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
             xournalpp \
             telegram-desktop \
             ristretto \
-            drawing \
+            pinta \
             transmission-gtk \
             vlc \
             pavucontrol \
