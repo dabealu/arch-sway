@@ -170,7 +170,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         "sudo pacman -Sy --noconfirm \
             code \
             evince \
-            xournalpp \
+            libreoffice \
             telegram-desktop \
             ristretto \
             pinta \
