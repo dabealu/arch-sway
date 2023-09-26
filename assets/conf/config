@@ -286,6 +286,8 @@ bindsym --to-code {
     # brightness control for external display
     $mod+Control+bracketright exec brightness-control increase
     $mod+Control+bracketleft exec brightness-control decrease
+    $mod+Shift+Control+bracketright exec brightness-control max
+    $mod+Shift+Control+bracketleft exec brightness-control min
 
     # Media player controls
     XF86AudioPlay exec playerctl play

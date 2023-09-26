@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	flagErrorMessage = "flag must be specified, either: increase or decrease"
+	flagErrorMessage = "flag must be specified, one of: increase, decrease, min, max"
+	atMinMessage     = "Already at min value"
+	atMaxMessage     = "Already at max value"
 	displayNumber    = "1"
 	valueFile        = "/tmp/brightness.value"
 )
@@ -25,11 +27,16 @@ func main() {
 	loadModule()
 
 	action := os.Args[1]
-	if action == "increase" {
+	switch action {
+	case "increase":
 		increase()
-	} else if action == "decrease" {
+	case "decrease":
 		decrease()
-	} else {
+	case "min":
+		min()
+	case "max":
+		max()
+	default:
 		log.Fatal(flagErrorMessage)
 	}
 }
@@ -154,31 +161,42 @@ func setValue(val int) {
 func increase() {
 	val := getValue()
 	if val == 100 {
-		notification("Already at max value")
-		// save in case there's no value saved to file
-		saveValue(val)
-		return
+		notification(atMaxMessage)
+	} else {
+		val = calculateNewValue(val, true)
+		setValue(val)
 	}
-
-	val = calculateNewValue(val, true)
-
-	setValue(val)
+	// save in any case - there could be no value saved to file before
 	saveValue(val)
 }
 
 func decrease() {
 	val := getValue()
 	if val == 0 {
-		notification("Already at min value")
-		// save in case there's no value saved to file
-		saveValue(val)
-		return
+		notification(atMinMessage)
+	} else {
+		val = calculateNewValue(val, false)
+		setValue(val)
 	}
-
-	val = calculateNewValue(val, false)
-
-	setValue(val)
 	saveValue(val)
+}
+
+func max() {
+	if getValue() == 100 {
+		notification(atMaxMessage)
+	} else {
+		setValue(100)
+	}
+	saveValue(100)
+}
+
+func min() {
+	if getValue() == 0 {
+		notification(atMinMessage)
+	} else {
+		setValue(0)
+	}
+	saveValue(0)
 }
 
 func calculateNewValue(val int, increase bool) int {
