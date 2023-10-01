@@ -18,6 +18,17 @@ pub fn text_file(path: &str, content: &str) -> Result<String, TaskError> {
     }
 }
 
+// append line to file
+pub fn append_line(path: &str, line: &str) -> Result<String, TaskError> {
+    match fs::OpenOptions::new().append(true).write(true).open(path) {
+        Ok(mut file) => match writeln!(file, "{}", line) {
+            Ok(_) => return Ok("".to_string()),
+            Err(e) => return Err(TaskError::new(&e.to_string())),
+        },
+        Err(e) => return Err(TaskError::new(&e.to_string())),
+    }
+}
+
 // append line if it's not found in file
 pub fn line_in_file(path: &str, line: &str) -> Result<String, TaskError> {
     if !Path::new(path).exists() {
@@ -32,13 +43,7 @@ pub fn line_in_file(path: &str, line: &str) -> Result<String, TaskError> {
         }
     }
 
-    match fs::OpenOptions::new().append(true).write(true).open(path) {
-        Ok(mut file) => match writeln!(file, "{}", line) {
-            Ok(_) => return Ok("".to_string()),
-            Err(e) => return Err(TaskError::new(&e.to_string())),
-        },
-        Err(e) => return Err(TaskError::new(&e.to_string())),
-    }
+    append_line(path, line)
 }
 
 pub fn replace_line(path: &str, regex: &str, replace: &str) -> Result<String, TaskError> {

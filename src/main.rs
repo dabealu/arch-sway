@@ -17,6 +17,7 @@ const HELP_MESSAGE: &str = "available flags:
 * u | update-bin          - compile new bin from local repo
 * b | build-iso           - create iso with arch-sway bin included
 * f | format-dev dev iso  - format device creating storage and boot partitions
+* e | steam vga           - install steam, vga options: intel, nvidia, amd
 * v | version             - print version and exit";
 
 fn main() {
@@ -70,6 +71,12 @@ fn main() {
             }
             "v" | "version" => {
                 println!("v{}", env!("CARGO_PKG_VERSION"));
+            }
+            "e" | "steam" => {
+                let vga_type = &args.next().expect("error: missing vga type");
+                if let Err(e) = tasks::install_steam(vga_type) {
+                    println!("failed to install steam: {e}");
+                }
             }
             _ => {
                 println!("unknown flag '{flag}', {HELP_MESSAGE}")

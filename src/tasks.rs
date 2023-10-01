@@ -1532,10 +1532,46 @@ pub fn format_device(dev_path: &str, iso_path: &str) -> Result<(), TaskError> {
 
     // rm temporary mount dir
     if let Err(e) = fs::remove_dir_all(&mnt_dir) {
-        println!("failed to remove directory {mnt_dir}: {e}");
-        process::exit(1);
+        return Err(TaskError::new(&format!(
+            "failed to remove directory {mnt_dir}: {e}"
+        )));
     }
     println!("done");
+
+    Ok(())
+}
+
+pub fn install_steam(vga_type: &str) -> Result<(), TaskError> {
+    // each vendor requires it's own specific vulkan drivers package
+    let driver_packages = HashMap::from([
+        ("intel", "vulkan-intel"),
+        ("nvidia", "nvidia-utils"),
+        ("amd", "amdvlk"),
+    ]);
+
+    if !driver_packages.contains_key(vga_type) {
+        return Err(TaskError::new(&format!("unknown vga type {vga_type}")));
+    }
+
+    let vulkan_package = driver_packages[vga_type];
+
+    // enable multilib repo
+    append_line("/etc/pacman.conf", "[multilib]")?;
+    append_line("/etc/pacman.conf", "Include = /etc/pacman.d/mirrorlist")?;
+
+    run_cmd(
+        &format!(
+            "pacman -Sy --noconfirm
+            {vulkan_package} \
+            ttf-liberation \
+            vulkan-icd-loader \
+            vulkan-tools \
+            lib32-mesa \
+            lib32-systemd \
+            steam"
+        ),
+        false,
+    )?;
 
     Ok(())
 }
