@@ -1556,8 +1556,12 @@ pub fn install_steam(vga_type: &str) -> Result<(), TaskError> {
     let vulkan_package = driver_packages[vga_type];
 
     // enable multilib repo
-    append_line("/etc/pacman.conf", "[multilib]")?;
-    append_line("/etc/pacman.conf", "Include = /etc/pacman.d/mirrorlist")?;
+    replace_block(
+        "/etc/pacman.conf",
+        r"#\[multilib\]",
+        "#Include = /etc/pacman.d/mirrorlist",
+        "[multilib]\nInclude = /etc/pacman.d/mirrorlist",
+    )?;
 
     run_cmd(
         &format!(

@@ -17,7 +17,7 @@ const HELP_MESSAGE: &str = "available flags:
 * u | update-bin          - compile new bin from local repo
 * b | build-iso           - create iso with arch-sway bin included
 * f | format-dev dev iso  - format device creating storage and boot partitions
-* e | steam vga           - install steam, vga options: intel, nvidia, amd
+* e | steam vga           - (sudo) install steam, vga options: intel, nvidia, amd
 * v | version             - print version and exit";
 
 fn main() {

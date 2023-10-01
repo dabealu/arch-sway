@@ -69,6 +69,53 @@ pub fn replace_line(path: &str, regex: &str, replace: &str) -> Result<String, Ta
     }
 }
 
+pub fn replace_block(
+    path: &str,
+    start: &str,
+    end: &str,
+    replacement: &str,
+) -> Result<String, TaskError> {
+    let start_re = Regex::new(start).unwrap();
+    let end_re = Regex::new(end).unwrap();
+
+    let lines: Vec<String> = match fs::read_to_string(path) {
+        Ok(txt) => txt.lines().map(|s| s.to_string()).collect(),
+        Err(e) => {
+            return Err(TaskError::new(&format!(
+                "failed to replace block in `{path}`: {e}"
+            )))
+        }
+    };
+
+    // find the indexes of the block to replace
+    let mut start_index = None;
+    let mut end_index = None;
+    for (i, line) in lines.iter().enumerate() {
+        if start_re.is_match(&line) {
+            start_index = Some(i);
+        } else if end_re.is_match(&line) && start_index != None {
+            end_index = Some(i);
+            break;
+        }
+    }
+
+    // if block is found, replace it
+    if let (Some(si), Some(ei)) = (start_index, end_index) {
+        let mut result = lines[..si].to_vec();
+        result.push(replacement.to_string());
+        result.extend_from_slice(&lines[ei + 1..]);
+
+        // write result to file
+        if let Err(e) = fs::write(path, result.join("\n")) {
+            return Err(TaskError::new(&format!(
+                "failed to replace block in `{path}`: {e}"
+            )));
+        };
+    }
+
+    Ok("".to_string())
+}
+
 pub fn run_cmd(cmd: &str, output: bool) -> Result<String, TaskError> {
     let cmd_slice: Vec<&str> = cmd.split_whitespace().collect();
 
