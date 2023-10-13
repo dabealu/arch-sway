@@ -1122,7 +1122,7 @@ impl Task for Docker {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        run_cmd("pacman -Sy --noconfirm docker docker-compose", false)?;
+        run_cmd("pacman -Sy --noconfirm docker", false)?;
         run_cmd(
             &format!("usermod -aG docker {}", self.parameters.username),
             false,
