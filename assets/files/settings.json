@@ -8,6 +8,7 @@
     "editor.minimap.enabled": false,
     "breadcrumbs.enabled": false,
     "window.menuBarVisibility": "toggle",
+    "go.formatTool": "goformat",
 
     // Vim settings
     // "workbench.statusBar.visible": true,
