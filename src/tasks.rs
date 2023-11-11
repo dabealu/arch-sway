@@ -756,6 +756,8 @@ impl Task for Variables {
     }
 
     fn run(&self) -> Result<String, TaskError> {
+        // TODO: move sway specific vars out of global environment to shell wrapper
+        //       script like sway-run and export them there before exec sway
         let vars = vec![
             "EDITOR=vim",
             "LIBSEAT_BACKEND=logind",
@@ -765,7 +767,7 @@ impl Task for Variables {
             "# WLR_RENDERER=vulkan",
             "QT_QPA_PLATFORM=wayland",
             "QT_WAYLAND_DISABLE_WINDOWDECORATION=1",
-            "QT_STYLE_OVERRIDE=Adwaita-dark",
+            "QT_STYLE_OVERRIDE=Materia-dark",
             "GTK_THEME=Materia:dark",
             "CLUTTER_BACKEND=wayland",
             "SDL_VIDEODRIVER=wayland",

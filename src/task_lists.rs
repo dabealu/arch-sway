@@ -95,7 +95,7 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
             grim slurp ddcutil lxappearance \
             syslinux lshw pciutils usbutils \
             noto-fonts noto-fonts-cjk noto-fonts-emoji \
-            materia-gtk-theme papirus-icon-theme adwaita-qt5",
+            materia-gtk-theme papirus-icon-theme",
         false,
         false,
     ));
