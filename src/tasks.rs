@@ -756,25 +756,7 @@ impl Task for Variables {
     }
 
     fn run(&self) -> Result<String, TaskError> {
-        // TODO: move sway specific vars out of global environment to shell wrapper
-        //       script like sway-run and export them there before exec sway
-        let vars = vec![
-            "EDITOR=vim",
-            "LIBSEAT_BACKEND=logind",
-            "XDG_CURRENT_DESKTOP=sway",
-            "XDG_SESSION_TYPE=wayland",
-            "WLR_DRM_NO_MODIFIERS=1",
-            "# WLR_RENDERER=vulkan",
-            "QT_QPA_PLATFORM=wayland",
-            "QT_WAYLAND_DISABLE_WINDOWDECORATION=1",
-            "QT_STYLE_OVERRIDE=Materia-dark",
-            "GTK_THEME=Materia:dark",
-            "CLUTTER_BACKEND=wayland",
-            "SDL_VIDEODRIVER=wayland",
-            "ELM_DISPLAY=wl",
-            "ELM_ACCEL=opengl",
-            "ECORE_EVAS_ENGINE=wayland_egl",
-        ];
+        let vars = vec!["EDITOR=vim", "LIBSEAT_BACKEND=logind"];
         for var in vars {
             if let Err(e) = line_in_file("/etc/environment", var) {
                 return Err(TaskError::new(&e.to_string()));
@@ -830,6 +812,22 @@ impl Task for SwayConfigs {
             Err(e) => return Err(TaskError::new(&e.to_string())),
         }
 
+        // wrapper script to set variables and run sway
+        copy_file(
+            &format!("{}/assets/files/de", paths::repo_dir("", "")),
+            &format!("/usr/local/bin/de"),
+        )?;
+        run_cmd(&format!("chmod +x /usr/local/bin/de"), false)?;
+        symlink("/usr/local/bin/de", &format!("/home/{username}/de"))?;
+        run_cmd(
+            &format!(
+                "chown -R {}:{} /home/{username}/de",
+                &self.parameters.user_id, &self.parameters.user_gid
+            ),
+            false,
+        )?;
+
+        // script to run waybar
         // TODO: use https://doc.rust-lang.org/stable/std/os/unix/fs/fn.chown.html - currently nightly
         run_cmd(
             &format!(

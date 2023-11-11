@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# set variables and run sway desktop env
+
+set -e
+
+export XDG_CURRENT_DESKTOP=sway
+export XDG_SESSION_TYPE=wayland
+
+# export WLR_RENDERER=vulkan
+export WLR_DRM_NO_MODIFIERS=1
+
+export QT_QPA_PLATFORM=wayland
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export QT_STYLE_OVERRIDE=Materia-dark #Adwaita-dark
+
+export GTK_THEME=Materia:dark
+
+export CLUTTER_BACKEND=wayland
+export SDL_VIDEODRIVER=wayland
+export ELM_DISPLAY=wl
+export ELM_ACCEL=opengl
+export ECORE_EVAS_ENGINE=wayland_egl
+export _JAVA_AWT_WM_NONREPARENTING=1
+
+exec sway
