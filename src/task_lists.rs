@@ -89,16 +89,6 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         false,
     ));
     r.add(Info::new("base desktop installed"));
-    r.add(Command::new(
-        "install_utilities_fonts_themes",
-        "pacman -Sy --noconfirm \
-            grim slurp ddcutil lxappearance \
-            syslinux lshw pciutils usbutils \
-            noto-fonts noto-fonts-cjk noto-fonts-emoji \
-            materia-gtk-theme papirus-icon-theme",
-        false,
-        false,
-    ));
     r.add(Variables::new());
     r.add(SwayConfigs::new(parameters.clone()));
     r.add(Command::new(
@@ -182,6 +172,16 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
         false,
     ));
     r.add(ConfigureIDE::new(parameters.clone()));
+    r.add(Command::new(
+        "install_utilities_fonts_themes",
+        "pacman -Sy --noconfirm \
+            grim slurp ddcutil lxappearance \
+            syslinux lshw pciutils usbutils \
+            noto-fonts noto-fonts-cjk noto-fonts-emoji \
+            materia-gtk-theme papirus-icon-theme",
+        false,
+        false,
+    ));
     r.add(InstallUtils::new(parameters.clone()));
     r.add(Info::new("installation finished: reboot and run `sway`"));
     r.add(StageCompleted::new("installation_completed", "", &username));
