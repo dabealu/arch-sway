@@ -16,8 +16,9 @@ const (
 	atMinMessage     = "Already at min value"
 	atMaxMessage     = "Already at max value"
 	displayNumber    = "1"
-	valueFile        = "/tmp/brightness.value"
 )
+
+var valueFile = "/.brightness.value"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -25,6 +26,12 @@ func main() {
 	}
 
 	loadModule()
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("failed to get $HOME: %s", err)
+	}
+	valueFile = homeDir + valueFile
 
 	action := os.Args[1]
 	switch action {
