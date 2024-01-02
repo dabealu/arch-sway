@@ -320,6 +320,11 @@ bindsym --to-code {
     $mod+d exec bemenu-run -b -p '>' --fn '$font $font-size' --tb '$urgent' --tf '$white' --hb '$urgent' --hf '$white'
 }
 
+# set GTK theme https://wiki.gentoo.org/wiki/Sway#GTK3_Themes_and_Fonts
+exec_always {
+    gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark"
+}
+
 ### Autostart
 # Set env required for WebRTC sharing
 # https://wiki.archlinux.org/title/PipeWire

@@ -134,7 +134,9 @@ pub fn installation_list(parameters: Parameters) -> TaskRunner {
             "sudo -u {username} -- bash -c 'yes | yay --noconfirm -Sy \
                 google-chrome \
                 wdisplays \
-                libinput-gestures'"
+                libinput-gestures \
+                adwaita-qt5-git \
+                adwaita-qt6-git'"
         ),
         false,
         true,

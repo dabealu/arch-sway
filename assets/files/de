@@ -12,9 +12,11 @@ export WLR_DRM_NO_MODIFIERS=1
 
 export QT_QPA_PLATFORM=wayland
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-export QT_STYLE_OVERRIDE=Materia-dark #Adwaita-dark
+export QT_STYLE_OVERRIDE=Materia-dark #adwaita-dark
 
 export GTK_THEME=Materia:dark
+# export GTK_THEME=Adwaita:dark
+# export GTK2_RC_FILES=/usr/share/themes/Adwaita-dark/gtk-2.0/gtkrc
 
 export CLUTTER_BACKEND=wayland
 export SDL_VIDEODRIVER=wayland
