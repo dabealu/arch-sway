@@ -322,7 +322,8 @@ bindsym --to-code {
 
 # set GTK theme https://wiki.gentoo.org/wiki/Sway#GTK3_Themes_and_Fonts
 exec_always {
-    gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark"
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 }
 
 ### Autostart
