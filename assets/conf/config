@@ -51,7 +51,7 @@ set $up    k
 set $right l
 
 # Terminal emulator
-set $term alacritty --config-file ~/.config/sway/alacritty.yml
+set $term alacritty --config-file ~/.config/sway/alacritty.toml
 
 ### Output configuration
 # Default wallpaper
