@@ -930,8 +930,14 @@ impl Task for Swap {
             Ok(lines) => {
                 for line in lines.split("\n") {
                     if line.starts_with("MemTotal:") {
-                        let mem_size_kb = line.split_whitespace().collect::<Vec<&str>>()[1];
-                        run_cmd(&format!("fallocate -l {mem_size_kb}K /swapfile"), false)?;
+                        let mem_size_kb_str = line.split_whitespace().collect::<Vec<&str>>()[1];
+                        match mem_size_kb_str.parse::<i64>() {
+                            Ok(val) => {
+                                let mem_size_kb: i64 = val + 1048576; // +1G
+                                run_cmd(&format!("fallocate -l {mem_size_kb}K /swapfile"), false)?;
+                            }
+                            Err(e) => return Err(TaskError::new(&e.to_string())),
+                        }
                         break;
                     }
                 }
