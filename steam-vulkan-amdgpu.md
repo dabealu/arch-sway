@@ -1,4 +1,6 @@
-**steam, amdgpu, vulkan**
+# steam, amdgpu, vulkan
+
+TODO: try gamemode - https://github.com/FeralInteractive/gamemode
 
 enable multilib in `/etc/pacman.conf`:
 ```ini
