@@ -118,5 +118,10 @@ try to set env var for Qt:
 QSG_RENDER_LOOP=basic zoom
 ```
 
-### encrypted volume
-TODO
+
+### TODO
+- encrypted volume
+- intel integrated graphics
+cat /etc/modprobe.d/i915.conf
+options i915 enable_psr=0 enable_guc=0 enable_fbc=0
+- CPU governor - set permanently to `performance` by default
